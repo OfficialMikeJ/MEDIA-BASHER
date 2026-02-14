@@ -50,6 +50,8 @@ function App() {
             <Route path="networks" element={<NetworksPage />} />
             <Route path="monitoring" element={<MonitoringPage />} />
             <Route path="backup" element={<BackupPage />} />
+            <Route path="alerts" element={<AlertsPage />} />
+            <Route path="resources" element={<ResourceHeatmapPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
