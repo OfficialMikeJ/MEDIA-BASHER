@@ -148,6 +148,15 @@ export default function ContainersPage() {
                     </div>
                   </div>
                   <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/containers/${container.id}/logs`)}
+                      className="rounded-sm"
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Logs
+                    </Button>
                     {container.status === 'running' ? (
                       <Button
                         variant="outline"
