@@ -7,6 +7,10 @@ import ApplicationsPage from '@/pages/ApplicationsPage';
 import ContainersPage from '@/pages/ContainersPage';
 import StoragePage from '@/pages/StoragePage';
 import SettingsPage from '@/pages/SettingsPage';
+import ContainerLogsPage from '@/pages/ContainerLogsPage';
+import UpdatesPage from '@/pages/UpdatesPage';
+import DockerComposePage from '@/pages/DockerComposePage';
+import NotificationsPage from '@/pages/NotificationsPage';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import '@/App.css';
 
