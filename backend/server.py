@@ -353,16 +353,21 @@ async def get_storage_pools(current_user: Dict = Depends(get_current_user)):
     return pools
 
 @api_router.post("/storage/pools", response_model=StoragePool)
-async def add_storage_pool(pool: StoragePool, current_user: Dict = Depends(get_current_user)):
+async def add_storage_pool(pool_input: StoragePoolCreate, current_user: Dict = Depends(get_current_user)):
     # Check if mount point exists
-    if not os.path.exists(pool.mount_point):
+    if not os.path.exists(pool_input.mount_point):
         raise HTTPException(status_code=400, detail="Mount point does not exist")
     
     # Get disk usage
     try:
-        usage = shutil.disk_usage(pool.mount_point)
-        pool.total_space = usage.total
-        pool.used_space = usage.used
+        usage = shutil.disk_usage(pool_input.mount_point)
+        pool = StoragePool(
+            name=pool_input.name,
+            mount_point=pool_input.mount_point,
+            pool_type=pool_input.pool_type,
+            total_space=usage.total,
+            used_space=usage.used
+        )
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Cannot access mount point: {str(e)}")
     
