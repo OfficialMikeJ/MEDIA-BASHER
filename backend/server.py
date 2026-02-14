@@ -100,6 +100,11 @@ class AppTemplate(BaseModel):
     volumes: Optional[List[str]] = None
     official: bool = True
 
+class StoragePoolCreate(BaseModel):
+    name: str
+    mount_point: str
+    pool_type: str  # local, remote, network
+
 class StoragePool(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
