@@ -36,8 +36,12 @@ function App() {
             <Route index element={<DashboardPage />} />
             <Route path="applications" element={<ApplicationsPage />} />
             <Route path="containers" element={<ContainersPage />} />
+            <Route path="containers/:containerId/logs" element={<ContainerLogsPage />} />
             <Route path="storage" element={<StoragePage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="updates" element={<UpdatesPage />} />
+            <Route path="compose" element={<DockerComposePage />} />
+            <Route path="notifications" element={<NotificationsPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
