@@ -18,6 +18,7 @@ import api from '@/lib/api';
 import { toast } from 'sonner';
 
 export default function ContainersPage() {
+  const navigate = useNavigate();
   const [containers, setContainers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
