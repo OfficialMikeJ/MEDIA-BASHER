@@ -11,6 +11,8 @@ const navItems = [
   { path: '/networks', label: 'Networks', icon: Network },
   { path: '/storage', label: 'Storage', icon: HardDrive },
   { path: '/monitoring', label: 'Monitoring', icon: Activity },
+  { path: '/resources', label: 'Resources', icon: Gauge },
+  { path: '/alerts', label: 'Alerts', icon: AlertTriangle },
   { path: '/updates', label: 'Updates', icon: RefreshCw },
   { path: '/backup', label: 'Backup', icon: Archive },
   { path: '/notifications', label: 'Notifications', icon: Bell },
