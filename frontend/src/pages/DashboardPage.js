@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Cpu, MemoryStick, HardDrive, Gpu, Activity, AlertCircle } from 'lucide-react';
+import { Cpu, MemoryStick, HardDrive, Layers, Activity, AlertCircle } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
