@@ -11,6 +11,9 @@ import ContainerLogsPage from '@/pages/ContainerLogsPage';
 import UpdatesPage from '@/pages/UpdatesPage';
 import DockerComposePage from '@/pages/DockerComposePage';
 import NotificationsPage from '@/pages/NotificationsPage';
+import NetworksPage from '@/pages/NetworksPage';
+import MonitoringPage from '@/pages/MonitoringPage';
+import BackupPage from '@/pages/BackupPage';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import '@/App.css';
 
