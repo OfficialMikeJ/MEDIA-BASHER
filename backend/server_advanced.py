@@ -407,3 +407,140 @@ async def system_health_check():
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+# ============ METRICS HISTORY ============
+
+@advanced_router.get("/metrics/history")
+async def get_metrics_history(hours: int = 1):
+    """Get historical metrics for the last N hours"""
+    metrics = metrics_collector.get_metrics(hours)
+    return {"metrics": metrics, "count": len(metrics)}
+
+@advanced_router.get("/metrics/aggregated")
+async def get_aggregated_metrics(hours: int = 24):
+    """Get aggregated statistics"""
+    stats = metrics_collector.get_aggregated_metrics(hours)
+    return stats
+
+@advanced_router.post("/metrics/start-collection")
+async def start_metrics_collection(background_tasks: BackgroundTasks):
+    """Start background metrics collection"""
+    background_tasks.add_task(metrics_collector.start_collection)
+    return {"success": True, "message": "Metrics collection started"}
+
+@advanced_router.post("/metrics/stop-collection")
+async def stop_metrics_collection():
+    """Stop background metrics collection"""
+    metrics_collector.stop_collection()
+    return {"success": True, "message": "Metrics collection stopped"}
+
+# ============ BACKUP SYSTEM ============
+
+class BackupConfigModel(BaseModel):
+    backup_path: str = "/backup"
+    backup_mongodb: bool = True
+    include_volumes: Optional[List[str]] = []
+    include_containers: Optional[List[str]] = []
+
+@advanced_router.post("/backup/create")
+async def create_backup(config: BackupConfigModel, background_tasks: BackgroundTasks):
+    """Create a system backup"""
+    backup_info = await backup_manager.create_backup(config.model_dump())
+    
+    if backup_info['status'] == 'completed':
+        await notification_manager.send_notification(
+            title="Backup Completed",
+            message=f"Backup {backup_info['id']} created successfully",
+            notification_type=NotificationType.SUCCESS,
+            channels=[],
+            config=None
+        )
+    
+    return backup_info
+
+@advanced_router.get("/backup/list")
+async def list_backups(backup_path: str = "/backup"):
+    """List all available backups"""
+    backups = backup_manager.list_backups(backup_path)
+    return {"backups": backups}
+
+@advanced_router.post("/backup/restore")
+async def restore_backup(backup_path: str):
+    """Restore from a backup file"""
+    success = await backup_manager.restore_backup(backup_path)
+    
+    if success:
+        await notification_manager.send_notification(
+            title="Backup Restored",
+            message="System restored from backup successfully",
+            notification_type=NotificationType.SUCCESS,
+            channels=[],
+            config=None
+        )
+        return {"success": True, "message": "Backup restored"}
+    else:
+        raise HTTPException(status_code=400, detail="Restore failed")
+
+# ============ RESOURCE MANAGEMENT UI ============
+
+class ResourceLimitsUI(BaseModel):
+    container_id: str
+    cpu_limit: Optional[float] = None
+    memory_limit: Optional[str] = None
+    restart_policy: Optional[str] = "unless-stopped"
+
+@advanced_router.post("/containers/set-limits")
+async def set_container_limits(limits: ResourceLimitsUI):
+    """Set resource limits for a container"""
+    try:
+        docker_client = docker.from_env()
+        container = docker_client.containers.get(limits.container_id)
+        
+        update_config = {"restart_policy": {"Name": limits.restart_policy}}
+        
+        if limits.cpu_limit:
+            update_config['cpu_quota'] = int(limits.cpu_limit * 100000)
+            update_config['cpu_period'] = 100000
+        
+        if limits.memory_limit:
+            update_config['mem_limit'] = limits.memory_limit
+        
+        container.update(**update_config)
+        
+        await notification_manager.send_notification(
+            title="Resource Limits Updated",
+            message=f"Container {container.name} limits configured",
+            notification_type=NotificationType.INFO,
+            channels=[],
+            config=None
+        )
+        
+        return {"success": True, "message": "Limits applied"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@advanced_router.get("/containers/{container_id}/limits")
+async def get_container_limits(container_id: str):
+    """Get current resource limits for a container"""
+    try:
+        docker_client = docker.from_env()
+        container = docker_client.containers.get(container_id)
+        
+        host_config = container.attrs.get('HostConfig', {})
+        
+        cpu_quota = host_config.get('CpuQuota', 0)
+        cpu_period = host_config.get('CpuPeriod', 100000)
+        cpu_limit = cpu_quota / cpu_period if cpu_quota > 0 else None
+        
+        memory_limit = host_config.get('Memory', 0)
+        
+        return {
+            "cpu_limit": cpu_limit,
+            "memory_limit": memory_limit,
+            "memory_limit_str": f"{memory_limit // (1024*1024)}m" if memory_limit > 0 else None,
+            "restart_policy": host_config.get('RestartPolicy', {}).get('Name', 'no')
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
