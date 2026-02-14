@@ -7,7 +7,10 @@ const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/applications', label: 'Applications', icon: Package },
   { path: '/containers', label: 'Containers', icon: Box },
+  { path: '/compose', label: 'Compose', icon: Layers },
   { path: '/storage', label: 'Storage', icon: HardDrive },
+  { path: '/updates', label: 'Updates', icon: RefreshCw },
+  { path: '/notifications', label: 'Notifications', icon: Bell },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
