@@ -735,7 +735,7 @@ async def configure_vpn(config: VPNConfig):
         
         if config.vpn_type == "wireguard":
             # Generate WireGuard config
-            wg_config = f\"\"\"[Interface]
+            wg_config = f"""[Interface]
 PrivateKey = {config.private_key or 'GENERATE_NEW_KEY'}
 Address = 10.0.0.2/24
 
@@ -743,7 +743,7 @@ Address = 10.0.0.2/24
 PublicKey = {config.public_key or 'SERVER_PUBLIC_KEY'}
 Endpoint = {config.server_address}:{config.server_port}
 AllowedIPs = 0.0.0.0/0
-\"\"\"
+"""
             # Save config (in production, save to /etc/wireguard/)
             return {"success": True, "config": wg_config, "message": "WireGuard configured"}
         
