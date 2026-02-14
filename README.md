@@ -43,7 +43,7 @@ sudo bash install.sh
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/media-basher.git
+git clone https://github.com/OfficialMikeJ/media-basher.git
 cd media-basher
 ```
 
