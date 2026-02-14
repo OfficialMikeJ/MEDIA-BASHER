@@ -70,29 +70,28 @@ export default function ResourceHeatmapPage() {
       </div>
 
       {containers.length === 0 ? (
-        <Card className=\"rounded-sm border-border\">
-          <CardContent className=\"py-12 text-center\">
-            <Activity className=\"w-16 h-16 text-muted-foreground mx-auto mb-4\" />
-            <h3 className=\"text-lg font-heading font-bold mb-2\">No Running Containers</h3>
-            <p className=\"text-muted-foreground\">Start some containers to see resource usage</p>
+        <Card className="rounded-sm border-border">
+          <CardContent className="py-12 text-center">
+            <Activity className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-heading font-bold mb-2">No Running Containers</h3>
+            <p className="text-muted-foreground">Start some containers to see resource usage</p>
           </CardContent>
         </Card>
       ) : (
-        <div className=\"grid gap-6 md:grid-cols-2 lg:grid-cols-3\">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {containers.map((container) => (
-            <Card key={container.id} className=\"rounded-sm border-border\">
+            <Card key={container.id} className="rounded-sm border-border">
               <CardHeader>
-                <CardTitle className=\"font-heading text-lg truncate\">{container.name}</CardTitle>
-                <p className=\"text-xs text-muted-foreground font-mono\">{container.id}</p>
+                <CardTitle className="font-heading text-lg truncate">{container.name}</CardTitle>
+                <p className="text-xs text-muted-foreground font-mono">{container.id}</p>
               </CardHeader>
-              <CardContent className=\"space-y-4\">
-                {/* CPU Heatmap */}
+              <CardContent className="space-y-4">
                 <div>
-                  <div className=\"flex justify-between text-sm mb-2\">
-                    <span className=\"text-muted-foreground\">CPU</span>
-                    <span className=\"font-mono font-bold\">{container.cpu_percent.toFixed(1)}%</span>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">CPU</span>
+                    <span className="font-mono font-bold">{container.cpu_percent.toFixed(1)}%</span>
                   </div>
-                  <div className=\"h-8 bg-secondary rounded-sm overflow-hidden\">
+                  <div className="h-8 bg-secondary rounded-sm overflow-hidden">
                     <div
                       className={`h-full ${getHeatColor(container.cpu_percent)} transition-all duration-500`}
                       style={{ width: `${Math.min(container.cpu_percent, 100)}%` }}
@@ -100,26 +99,24 @@ export default function ResourceHeatmapPage() {
                   </div>
                 </div>
 
-                {/* Memory Heatmap */}
                 <div>
-                  <div className=\"flex justify-between text-sm mb-2\">
-                    <span className=\"text-muted-foreground\">Memory</span>
-                    <span className=\"font-mono font-bold\">{container.memory_percent.toFixed(1)}%</span>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">Memory</span>
+                    <span className="font-mono font-bold">{container.memory_percent.toFixed(1)}%</span>
                   </div>
-                  <div className=\"h-8 bg-secondary rounded-sm overflow-hidden\">
+                  <div className="h-8 bg-secondary rounded-sm overflow-hidden">
                     <div
                       className={`h-full ${getHeatColor(container.memory_percent)} transition-all duration-500`}
                       style={{ width: `${Math.min(container.memory_percent, 100)}%` }}
                     />
                   </div>
-                  <p className=\"text-xs text-muted-foreground mt-1 font-mono\">
+                  <p className="text-xs text-muted-foreground mt-1 font-mono">
                     {formatBytes(container.memory_usage)} / {formatBytes(container.memory_limit)}
                   </p>
                 </div>
 
-                {/* Status */}
-                <div className=\"flex justify-between items-center pt-2 border-t border-border\">
-                  <span className=\"text-sm text-muted-foreground\">Status</span>
+                <div className="flex justify-between items-center pt-2 border-t border-border">
+                  <span className="text-sm text-muted-foreground">Status</span>
                   <span className={`text-xs font-mono font-bold ${
                     container.status === 'running' ? 'text-primary' : 'text-muted-foreground'
                   }`}>
