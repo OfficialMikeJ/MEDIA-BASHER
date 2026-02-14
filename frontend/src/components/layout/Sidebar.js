@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Server, LayoutDashboard, Package, Box, HardDrive, Settings, Menu, X } from 'lucide-react';
+import { Server, LayoutDashboard, Package, Box, HardDrive, Settings, Menu, X, RefreshCw, Layers, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const navItems = [
