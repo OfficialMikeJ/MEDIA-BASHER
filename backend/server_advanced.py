@@ -8,12 +8,19 @@ import docker
 import asyncio
 import yaml
 import os
+import logging
 from websocket_manager import manager
 from notifications import notification_manager, NotificationType, NotificationChannel
 from metrics_collector import metrics_collector
 from backup_manager import backup_manager
+from auth_utils import get_current_user
 
-advanced_router = APIRouter(prefix="/api/advanced")
+logger = logging.getLogger(__name__)
+
+advanced_router = APIRouter(
+    prefix="/api/advanced",
+    dependencies=[Depends(get_current_user)]
+)
 
 # ============ MODELS ============
 
