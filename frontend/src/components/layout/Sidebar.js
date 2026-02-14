@@ -8,8 +8,11 @@ const navItems = [
   { path: '/applications', label: 'Applications', icon: Package },
   { path: '/containers', label: 'Containers', icon: Box },
   { path: '/compose', label: 'Compose', icon: Layers },
+  { path: '/networks', label: 'Networks', icon: Network },
   { path: '/storage', label: 'Storage', icon: HardDrive },
+  { path: '/monitoring', label: 'Monitoring', icon: Activity },
   { path: '/updates', label: 'Updates', icon: RefreshCw },
+  { path: '/backup', label: 'Backup', icon: Archive },
   { path: '/notifications', label: 'Notifications', icon: Bell },
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
