@@ -12,7 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Box, Play, Square, Trash2, AlertCircle } from 'lucide-react';
+import { Box, Play, Square, Trash2, AlertCircle, FileText } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
