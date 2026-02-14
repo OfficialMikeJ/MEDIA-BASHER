@@ -491,6 +491,13 @@ async def seed_app_templates():
 
 app.include_router(api_router)
 
+# Include advanced features router
+try:
+    from server_advanced import advanced_router
+    app.include_router(advanced_router)
+except ImportError:
+    pass
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
