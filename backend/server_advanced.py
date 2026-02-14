@@ -1,15 +1,17 @@
 # Advanced features extension for Media Basher
 # This file contains additional routes for advanced features
 
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File, BackgroundTasks
 from typing import Dict, List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 import docker
 import asyncio
 import yaml
 import os
 from websocket_manager import manager
 from notifications import notification_manager, NotificationType, NotificationChannel
+from metrics_collector import metrics_collector
+from backup_manager import backup_manager
 
 advanced_router = APIRouter(prefix="/api/advanced")
 
