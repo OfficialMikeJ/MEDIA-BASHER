@@ -117,7 +117,7 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
               GPU Status
             </CardTitle>
-            <Gpu className="w-4 h-4 text-primary" strokeWidth={1.5} />
+            <Layers className="w-4 h-4 text-primary" strokeWidth={1.5} />
           </CardHeader>
           <CardContent>
             {metrics?.gpu_info?.installed ? (
