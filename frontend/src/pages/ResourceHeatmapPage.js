@@ -57,14 +57,14 @@ export default function ResourceHeatmapPage() {
   }
 
   return (
-    <div className=\"space-y-6\" data-testid=\"resource-heatmap-page\">
-      <div className=\"flex items-center justify-between\">
+    <div className="space-y-6" data-testid="resource-heatmap-page">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className=\"text-4xl font-heading font-bold tracking-tight\">Resource Heatmap</h1>
-          <p className=\"text-muted-foreground mt-2\">Real-time container resource visualization</p>
+          <h1 className="text-4xl font-heading font-bold tracking-tight">Resource Heatmap</h1>
+          <p className="text-muted-foreground mt-2">Real-time container resource visualization</p>
         </div>
-        <Button onClick={loadHeatmap} variant=\"outline\" className=\"rounded-sm\">
-          <RefreshCw className=\"w-4 h-4 mr-2\" />
+        <Button onClick={loadHeatmap} variant="outline" className="rounded-sm">
+          <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
         </Button>
       </div>
