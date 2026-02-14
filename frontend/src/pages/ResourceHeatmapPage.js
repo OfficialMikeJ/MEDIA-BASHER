@@ -47,10 +47,10 @@ export default function ResourceHeatmapPage() {
 
   if (loading) {
     return (
-      <div className=\"flex items-center justify-center h-full\">
-        <div className=\"text-center\">
-          <Activity className=\"w-12 h-12 text-primary animate-pulse mx-auto mb-4\" />
-          <p className=\"text-muted-foreground\">Loading resource heatmap...</p>
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <Activity className="w-12 h-12 text-primary animate-pulse mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading resource heatmap...</p>
         </div>
       </div>
     );
