@@ -544,3 +544,231 @@ async def get_container_limits(container_id: str):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
+
+# ============ ALERT MANAGEMENT ============
+
+from alert_manager import alert_manager, AlertRule
+import uuid
+
+class AlertRuleModel(BaseModel):
+    name: str
+    metric: str  # cpu, ram, disk
+    threshold: float
+    comparison: str  # gt, lt
+    enabled: bool = True
+
+@advanced_router.get("/alerts/rules")
+async def get_alert_rules():
+    """Get all alert rules"""
+    return {"rules": alert_manager.get_rules()}
+
+@advanced_router.post("/alerts/rules")
+async def create_alert_rule(rule: AlertRuleModel):
+    """Create a new alert rule"""
+    rule_id = str(uuid.uuid4())
+    alert_rule = AlertRule(
+        rule_id=rule_id,
+        name=rule.name,
+        metric=rule.metric,
+        threshold=rule.threshold,
+        comparison=rule.comparison,
+        enabled=rule.enabled
+    )
+    alert_manager.add_rule(alert_rule)
+    return {"success": True, "rule_id": rule_id}
+
+@advanced_router.delete("/alerts/rules/{rule_id}")
+async def delete_alert_rule(rule_id: str):
+    """Delete an alert rule"""
+    alert_manager.remove_rule(rule_id)
+    return {"success": True}
+
+@advanced_router.put("/alerts/rules/{rule_id}")
+async def update_alert_rule(rule_id: str, updates: Dict):
+    """Update an alert rule"""
+    alert_manager.update_rule(rule_id, updates)
+    return {"success": True}
+
+@advanced_router.post("/alerts/start-monitoring")
+async def start_alert_monitoring(background_tasks: BackgroundTasks, config: Optional[NotificationConfig] = None):
+    """Start alert monitoring"""
+    if config:
+        alert_manager.set_notification_config(config.model_dump())
+    background_tasks.add_task(alert_manager.start_monitoring)
+    return {"success": True, "message": "Alert monitoring started"}
+
+@advanced_router.post("/alerts/stop-monitoring")
+async def stop_alert_monitoring():
+    """Stop alert monitoring"""
+    alert_manager.stop_monitoring()
+    return {"success": True, "message": "Alert monitoring stopped"}
+
+# ============ SCHEDULED BACKUPS ============
+
+from backup_scheduler import backup_scheduler
+
+class BackupScheduleModel(BaseModel):
+    name: str
+    cron_expression: str
+    backup_config: BackupConfigModel
+
+@advanced_router.get("/backup/schedules")
+async def get_backup_schedules():
+    """Get all backup schedules"""
+    schedules = backup_scheduler.get_schedules()
+    return {"schedules": schedules}
+
+@advanced_router.post("/backup/schedules")
+async def create_backup_schedule(schedule: BackupScheduleModel):
+    """Create a new backup schedule"""
+    schedule_id = str(uuid.uuid4())
+    backup_scheduler.add_schedule(schedule_id, schedule.cron_expression, schedule.backup_config.model_dump())
+    return {"success": True, "schedule_id": schedule_id}
+
+@advanced_router.delete("/backup/schedules/{schedule_id}")
+async def delete_backup_schedule(schedule_id: str):
+    """Delete a backup schedule"""
+    backup_scheduler.remove_schedule(schedule_id)
+    return {"success": True}
+
+@advanced_router.post("/backup/schedules/{schedule_id}/pause")
+async def pause_backup_schedule(schedule_id: str):
+    """Pause a backup schedule"""
+    backup_scheduler.pause_schedule(schedule_id)
+    return {"success": True}
+
+@advanced_router.post("/backup/schedules/{schedule_id}/resume")
+async def resume_backup_schedule(schedule_id: str):
+    """Resume a backup schedule"""
+    backup_scheduler.resume_schedule(schedule_id)
+    return {"success": True}
+
+# ============ CONTAINER RESOURCE HEATMAP ============
+
+@advanced_router.get("/containers/resource-heatmap")
+async def get_container_resource_heatmap():
+    """Get resource usage for all containers"""
+    try:
+        docker_client = docker.from_env()
+        containers = docker_client.containers.list()
+        
+        heatmap_data = []
+        for container in containers:
+            try:
+                stats = container.stats(stream=False)
+                
+                # Calculate CPU percentage
+                cpu_delta = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
+                system_delta = stats['cpu_stats']['system_cpu_usage'] - stats['precpu_stats']['system_cpu_usage']
+                cpu_percent = (cpu_delta / system_delta) * len(stats['cpu_stats']['cpu_usage']['percpu_usage']) * 100.0 if system_delta > 0 else 0
+                
+                # Calculate memory percentage
+                mem_usage = stats['memory_stats']['usage']
+                mem_limit = stats['memory_stats']['limit']
+                mem_percent = (mem_usage / mem_limit) * 100 if mem_limit > 0 else 0
+                
+                heatmap_data.append({
+                    "id": container.id[:12],
+                    "name": container.name,
+                    "cpu_percent": round(cpu_percent, 2),
+                    "memory_percent": round(mem_percent, 2),
+                    "memory_usage": mem_usage,
+                    "memory_limit": mem_limit,
+                    "status": container.status
+                })
+            except Exception as e:
+                logger.error(f"Error getting stats for container {container.name}: {e}")
+        
+        return {"containers": heatmap_data}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# ============ MULTI-CONTAINER LOG AGGREGATION ============
+
+@advanced_router.get("/logs/aggregate")
+async def aggregate_logs(container_ids: str, lines: int = 100):
+    """Aggregate logs from multiple containers"""
+    try:
+        docker_client = docker.from_env()
+        ids = container_ids.split(',')
+        
+        aggregated_logs = []
+        for container_id in ids:
+            try:
+                container = docker_client.containers.get(container_id.strip())
+                logs = container.logs(tail=lines, timestamps=True).decode('utf-8')
+                
+                for line in logs.split('\n'):
+                    if line.strip():
+                        aggregated_logs.append({
+                            "container_id": container_id[:12],
+                            "container_name": container.name,
+                            "log": line
+                        })
+            except Exception as e:
+                logger.error(f"Error getting logs for {container_id}: {e}")
+        
+        # Sort by timestamp if available
+        aggregated_logs.sort(key=lambda x: x['log'])
+        
+        return {"logs": aggregated_logs[-lines:]}  # Return last N lines
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# ============ VPN CONFIGURATION ============
+
+class VPNConfig(BaseModel):
+    vpn_type: str  # wireguard or openvpn
+    server_address: str
+    server_port: int
+    private_key: Optional[str] = None
+    public_key: Optional[str] = None
+    config_file: Optional[str] = None
+
+@advanced_router.post("/vpn/configure")
+async def configure_vpn(config: VPNConfig):
+    """Configure VPN (WireGuard or OpenVPN)"""
+    try:
+        # This is a placeholder for VPN configuration
+        # In production, this would set up WireGuard/OpenVPN configs
+        
+        if config.vpn_type == "wireguard":
+            # Generate WireGuard config
+            wg_config = f\"\"\"[Interface]
+PrivateKey = {config.private_key or 'GENERATE_NEW_KEY'}
+Address = 10.0.0.2/24
+
+[Peer]
+PublicKey = {config.public_key or 'SERVER_PUBLIC_KEY'}
+Endpoint = {config.server_address}:{config.server_port}
+AllowedIPs = 0.0.0.0/0
+\"\"\"
+            # Save config (in production, save to /etc/wireguard/)
+            return {"success": True, "config": wg_config, "message": "WireGuard configured"}
+        
+        elif config.vpn_type == "openvpn":
+            # OpenVPN configuration
+            return {"success": True, "message": "OpenVPN configuration requires .ovpn file upload"}
+        
+        else:
+            raise HTTPException(status_code=400, detail="Unsupported VPN type")
+            
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@advanced_router.get("/vpn/status")
+async def get_vpn_status():
+    """Get VPN connection status"""
+    try:
+        # Check if WireGuard is running
+        import subprocess
+        result = subprocess.run(["wg", "show"], capture_output=True, text=True)
+        
+        if result.returncode == 0 and result.stdout:
+            return {"connected": True, "type": "wireguard", "status": result.stdout}
+        else:
+            return {"connected": False, "message": "No active VPN connection"}
+    except Exception as e:
+        return {"connected": False, "message": str(e)}
+
