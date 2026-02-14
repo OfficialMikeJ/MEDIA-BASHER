@@ -45,6 +45,9 @@ function App() {
             <Route path="updates" element={<UpdatesPage />} />
             <Route path="compose" element={<DockerComposePage />} />
             <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="networks" element={<NetworksPage />} />
+            <Route path="monitoring" element={<MonitoringPage />} />
+            <Route path="backup" element={<BackupPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
