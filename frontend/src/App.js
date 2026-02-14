@@ -14,6 +14,8 @@ import NotificationsPage from '@/pages/NotificationsPage';
 import NetworksPage from '@/pages/NetworksPage';
 import MonitoringPage from '@/pages/MonitoringPage';
 import BackupPage from '@/pages/BackupPage';
+import AlertsPage from '@/pages/AlertsPage';
+import ResourceHeatmapPage from '@/pages/ResourceHeatmapPage';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import '@/App.css';
 
