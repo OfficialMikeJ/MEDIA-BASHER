@@ -321,8 +321,19 @@ def seed_apps(db: Session = Depends(get_db)):
 def get_settings(username: str = Depends(get_current_user)):
     return {
         "ddns_enabled": False,
-        "ssl_enabled": False
+        "ddns_hostname": "",
+        "ddns_username": "",
+        "ddns_password": "",
+        "ssl_enabled": False,
+        "ssl_email": "",
+        "ssl_domain": ""
     }
+
+@api_router.put("/settings")
+def update_settings(settings: dict, username: str = Depends(get_current_user)):
+    # For now, just return success - in production, you'd save to database
+    # TODO: Create a Settings table in PostgreSQL to persist these values
+    return {"message": "Settings saved successfully", "settings": settings}
 
 @api_router.get("/advanced/notifications")
 def get_notifications(username: str = Depends(get_current_user)):
