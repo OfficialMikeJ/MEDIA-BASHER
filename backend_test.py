@@ -54,20 +54,18 @@ class MediaBasherAPITester:
             return False, 0, {"error": str(e)}
 
     def test_register(self):
-        """Test user registration"""
-        timestamp = datetime.now().strftime("%H%M%S")
+        """Test user registration as specified in review request"""
         user_data = {
-            "username": f"testuser_{timestamp}",
+            "username": "testuser123",
             "password": "testpass123",
-            "email": f"test_{timestamp}@example.com"
+            "email": "test@test.com"
         }
         
         success, status, response = self.make_request('POST', 'auth/register', user_data, 200)
         
-        if success and 'access_token' in response:
-            self.token = response['access_token']
-            self.user_id = response['user']['id']
-            return self.log_test("User Registration", True, f"- Token received, User ID: {self.user_id}")
+        if success and 'token' in response:
+            self.token = response['token']
+            return self.log_test("User Registration", True, f"- Token received: {self.token[:20]}...")
         else:
             return self.log_test("User Registration", False, f"- Status: {status}, Response: {response}")
 
