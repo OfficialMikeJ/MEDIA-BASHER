@@ -81,8 +81,8 @@ sudo systemctl start mongod
 
 ```bash
 # Clone repository
-git clone https://github.com/OfficialMikeJ/media-basher.git
-cd media-basher
+git clone https://github.com/OfficialMikeJ/MEDIA-BASHER.git
+cd MEDIA-BASHER
 
 # Setup backend
 cd backend
