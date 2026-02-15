@@ -297,10 +297,19 @@ def main():
     tester.test_get_me()
     tester.test_system_metrics()
     tester.test_containers_list()
+    tester.test_containers_endpoint()
+    
+    # Test applications functionality as specified in review request
+    print("\n📋 Testing Applications Management...")
+    tester.test_applications_before_seed()
+    tester.test_seed_applications()
+    tester.test_applications_after_seed()
     
     # Test storage functionality
     print("\n📋 Testing Storage Management...")
     tester.test_storage_pool_creation()
+    tester.test_storage_pool_root_path()
+    tester.test_storage_pool_invalid_path()
     tester.test_get_storage_pools()
     
     # Final results
