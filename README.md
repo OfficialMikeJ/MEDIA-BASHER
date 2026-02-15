@@ -63,15 +63,28 @@ http://YOUR_SERVER_IP:3000
 
 The `install.sh` script automatically:
 
-1. ✅ Checks system requirements
-2. ✅ Installs Docker & Docker Compose
-3. ✅ Installs Python 3.11 with required packages
-4. ✅ Installs Node.js 20 and Yarn
-5. ✅ Installs MongoDB 7.0
-6. ✅ Sets up backend with virtual environment
-7. ✅ Builds frontend React application
-8. ✅ Creates initial admin user
-9. ✅ Seeds official application templates
+1. ✅ Checks system requirements (CPU, RAM, Disk Space)
+2. ✅ Updates system packages
+3. ✅ Installs Docker & Docker Compose
+4. ✅ Installs Python 3.11 with required packages
+5. ✅ Installs Node.js 20 and Yarn
+6. ✅ Installs MongoDB 7.0
+7. ✅ Clones repository to `/opt/media-basher`
+8. ✅ Sets up backend with virtual environment
+9. ✅ Builds frontend React application
+10. ✅ Creates initial admin user
+11. ✅ Seeds official application templates
+
+### Installation Process Details
+
+The installer uses a robust cloning strategy:
+- Clones the repository to a temporary directory first
+- Verifies the clone was successful
+- Copies files to the final installation path `/opt/media-basher`
+- Validates directory structure before proceeding
+- Automatically configures environment variables
+
+**Installation Time:** Approximately 10-15 minutes depending on internet speed
 
 ## Supported Applications
 
