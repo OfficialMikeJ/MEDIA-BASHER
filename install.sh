@@ -40,7 +40,7 @@ if [ "$DISTRIB_RELEASE" != "24.04" ]; then
     fi
 fi
 
-echo "[1/8] Checking system requirements..."
+echo "[1/9] Checking system requirements..."
 echo ""
 
 # Check CPU cores
@@ -68,12 +68,12 @@ if [ "$DISK_SPACE_GB" -lt 120 ]; then
 fi
 
 echo ""
-echo "[2/8] Updating system packages..."
+echo "[2/9] Updating system packages..."
 apt-get update -qq
 apt-get upgrade -y -qq
 
 echo ""
-echo "[3/8] Installing dependencies..."
+echo "[3/9] Installing dependencies..."
 apt-get install -y -qq \
     curl \
     wget \
@@ -86,7 +86,7 @@ apt-get install -y -qq \
     lsb-release
 
 echo ""
-echo "[4/8] Installing Docker..."
+echo "[4/9] Installing Docker..."
 if ! command -v docker &> /dev/null; then
     # Add Docker's official GPG key
     install -m 0755 -d /etc/apt/keyrings
@@ -110,7 +110,7 @@ else
 fi
 
 echo ""
-echo "[5/8] Installing Python 3.11..."
+echo "[5/9] Installing Python 3.11..."
 if ! command -v python3.11 &> /dev/null; then
     add-apt-repository ppa:deadsnakes/ppa -y
     apt-get update -qq
@@ -121,7 +121,7 @@ else
 fi
 
 echo ""
-echo "[6/8] Installing Node.js and Yarn..."
+echo "[6/9] Installing Node.js and Yarn..."
 if ! command -v node &> /dev/null; then
     curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
     apt-get install -y -qq nodejs
@@ -132,7 +132,7 @@ else
 fi
 
 echo ""
-echo "[7/8] Installing MongoDB..."
+echo "[7/9] Installing MongoDB..."
 if ! command -v mongod &> /dev/null; then
     curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | gpg --dearmor -o /etc/apt/keyrings/mongodb-server-7.0.gpg
     echo "deb [ arch=amd64,arm64 signed-by=/etc/apt/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-7.0.list
@@ -146,7 +146,7 @@ else
 fi
 
 echo ""
-echo "[8/8] Setting up Media Basher..."
+echo "[8/9] Setting up Media Basher..."
 
 # Create temporary directory for cloning
 TEMP_DIR=$(mktemp -d)
@@ -283,6 +283,76 @@ kill $BACKEND_PID
 deactivate
 
 echo ""
+echo "[9/9] Setting up systemd services..."
+
+# Create backend service
+cat > /etc/systemd/system/media-basher-backend.service << EOF
+[Unit]
+Description=Media Basher Backend API
+After=network.target mongod.service docker.service
+Requires=mongod.service docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=${INSTALL_DIR}/backend
+Environment="PATH=${INSTALL_DIR}/backend/venv/bin"
+ExecStart=${INSTALL_DIR}/backend/venv/bin/uvicorn server:app --host 0.0.0.0 --port 8001
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Create frontend service
+cat > /etc/systemd/system/media-basher-frontend.service << EOF
+[Unit]
+Description=Media Basher Frontend
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=${INSTALL_DIR}/frontend
+ExecStart=/usr/bin/yarn start
+Environment="PORT=3000"
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# Reload systemd and enable services
+systemctl daemon-reload
+systemctl enable media-basher-backend.service
+systemctl enable media-basher-frontend.service
+
+# Start services
+systemctl start media-basher-backend.service
+systemctl start media-basher-frontend.service
+
+echo "  Backend service started"
+echo "  Frontend service started"
+
+# Wait a moment for services to start
+sleep 3
+
+# Check service status
+if systemctl is-active --quiet media-basher-backend.service; then
+    echo "  ✓ Backend service is running"
+else
+    echo "  ✗ Backend service failed to start"
+fi
+
+if systemctl is-active --quiet media-basher-frontend.service; then
+    echo "  ✓ Frontend service is running"
+else
+    echo "  ✗ Frontend service failed to start"
+fi
+
+echo ""
 echo "========================================="
 echo "   SETUP COMPLETE"
 echo "========================================="
@@ -309,10 +379,13 @@ echo ""
 echo "To find your storage mount point, run:"
 echo "  df -h | grep -E 'T|G' | grep -v tmpfs"
 echo ""
-echo "To start the services manually:"
-echo "  Backend:  cd ${INSTALL_DIR}/backend && source venv/bin/activate && uvicorn server:app --host 0.0.0.0 --port 8001"
-echo "  Frontend: cd ${INSTALL_DIR}/frontend && yarn start"
-echo ""
-echo "To set up as a system service, create systemd unit files."
+echo "Service Management:"
+echo "  Status:   sudo systemctl status media-basher-backend"
+echo "  Status:   sudo systemctl status media-basher-frontend"
+echo "  Restart:  sudo systemctl restart media-basher-backend"
+echo "  Restart:  sudo systemctl restart media-basher-frontend"
+echo "  Stop:     sudo systemctl stop media-basher-backend media-basher-frontend"
+echo "  Logs:     sudo journalctl -u media-basher-backend -f"
+echo "  Logs:     sudo journalctl -u media-basher-frontend -f"
 echo ""
 echo "========================================="
