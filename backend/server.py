@@ -242,6 +242,10 @@ def get_containers_list(username: str = Depends(get_current_user)):
 
 @api_router.post("/storage/pools")
 def add_storage_pool(pool: StoragePoolCreate, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Validate path exists
+    if not os.path.exists(pool.path):
+        raise HTTPException(status_code=400, detail=f"Path '{pool.path}' does not exist")
+    
     existing = db.query(StoragePool).filter(StoragePool.name == pool.name).first()
     if existing:
         raise HTTPException(status_code=400, detail="Storage pool already exists")
@@ -249,8 +253,8 @@ def add_storage_pool(pool: StoragePoolCreate, username: str = Depends(get_curren
     try:
         disk_usage = shutil.disk_usage(pool.path)
         size = f"{disk_usage.total / (1024**3):.2f} GB"
-    except:
-        size = "Unknown"
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Unable to access path: {str(e)}")
     
     new_pool = StoragePool(
         name=pool.name,
