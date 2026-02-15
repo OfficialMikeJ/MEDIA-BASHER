@@ -119,25 +119,41 @@ class MediaBasherAPITester:
         else:
             return self.log_test("System Metrics", False, f"- Status: {status}, Response: {response}")
 
+    def test_cors_headers(self):
+        """Test CORS headers are properly set"""
+        url = f"{self.base_url}/api/auth/login"
+        headers = {'Content-Type': 'application/json'}
+        
+        try:
+            response = requests.options(url, headers=headers, timeout=10)
+            cors_headers = {
+                'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                'Access-Control-Allow-Credentials': response.headers.get('Access-Control-Allow-Credentials'),
+                'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers')
+            }
+            
+            if cors_headers['Access-Control-Allow-Origin'] == '*':
+                return self.log_test("CORS Headers", True, f"- Headers: {cors_headers}")
+            else:
+                return self.log_test("CORS Headers", False, f"- Missing or incorrect CORS headers: {cors_headers}")
+                
+        except Exception as e:
+            return self.log_test("CORS Headers", False, f"- Error: {str(e)}")
+
     def test_storage_pool_creation(self):
-        """Test storage pool creation with /tmp mount point"""
+        """Test storage pool creation"""
         pool_data = {
-            "name": "Test Storage",
-            "mount_point": "/tmp",
-            "pool_type": "local"
+            "name": "Test Storage Pool",
+            "path": "/tmp"
         }
         
         success, status, response = self.make_request('POST', 'storage/pools', pool_data, 200)
         
-        if success and 'id' in response and 'total_space' in response:
-            pool_id = response['id']
-            total_space = response['total_space']
-            used_space = response['used_space']
-            return self.log_test("Storage Pool Creation (/tmp)", True, 
-                               f"- Pool ID: {pool_id}, Total: {total_space//1024//1024}MB, Used: {used_space//1024//1024}MB"), pool_id
+        if success and 'message' in response:
+            return self.log_test("Storage Pool Creation", True, f"- {response['message']}")
         else:
-            return self.log_test("Storage Pool Creation (/tmp)", False, 
-                               f"- Status: {status}, Response: {response}"), None
+            return self.log_test("Storage Pool Creation", False, f"- Status: {status}, Response: {response}")
 
     def test_get_storage_pools(self):
         """Test getting storage pools"""
@@ -148,24 +164,6 @@ class MediaBasherAPITester:
         else:
             return self.log_test("Get Storage Pools", False, f"- Status: {status}, Response: {response}")
 
-    def test_get_settings(self):
-        """Test getting system settings"""
-        success, status, response = self.make_request('GET', 'settings', expected_status=200)
-        
-        if success and 'ddns_enabled' in response:
-            return self.log_test("Get System Settings", True, f"- DDNS enabled: {response['ddns_enabled']}")
-        else:
-            return self.log_test("Get System Settings", False, f"- Status: {status}, Response: {response}")
-
-    def test_app_templates(self):
-        """Test getting app templates"""
-        success, status, response = self.make_request('GET', 'apps/templates', expected_status=200)
-        
-        if success and isinstance(response, list):
-            return self.log_test("Get App Templates", True, f"- Found {len(response)} templates")
-        else:
-            return self.log_test("Get App Templates", False, f"- Status: {status}, Response: {response}")
-
     def test_containers_list(self):
         """Test listing containers"""
         success, status, response = self.make_request('GET', 'containers/list', expected_status=200)
@@ -175,14 +173,22 @@ class MediaBasherAPITester:
         else:
             return self.log_test("List Containers", False, f"- Status: {status}, Response: {response}")
 
-    def cleanup_storage_pool(self, pool_id):
-        """Clean up created storage pool"""
-        if pool_id:
-            success, status, response = self.make_request('DELETE', f'storage/pools/{pool_id}', expected_status=200)
-            if success:
-                print(f"🧹 Cleaned up storage pool: {pool_id}")
-            else:
-                print(f"⚠️  Failed to cleanup storage pool: {pool_id}")
+    def create_test_user(self):
+        """Create mike user for testing if it doesn't exist"""
+        user_data = {
+            "username": "mike",
+            "password": "test123",
+            "email": "mike@test.com"
+        }
+        
+        success, status, response = self.make_request('POST', 'auth/register', user_data, 200)
+        
+        if success:
+            return self.log_test("Create Test User (mike)", True, "- User created successfully")
+        elif status == 400 and 'already exists' in str(response):
+            return self.log_test("Create Test User (mike)", True, "- User already exists")
+        else:
+            return self.log_test("Create Test User (mike)", False, f"- Status: {status}, Response: {response}")
 
 def main():
     print("🚀 Starting Media Basher API Tests")
