@@ -250,7 +250,7 @@ echo ""
 echo "Creating admin user..."
 
 # Start services temporarily
-cd ${INSTALL_DIR}/backend
+cd ${INSTALL_DIR}/media-basher/backend
 source venv/bin/activate
 uvicorn server:app --host 0.0.0.0 --port 8001 > /dev/null 2>&1 &
 BACKEND_PID=$!
