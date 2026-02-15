@@ -189,13 +189,13 @@ export default function StoragePage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="mount-point">Mount Point</Label>
+              <Label htmlFor="mount-point">Path</Label>
               <Input
                 id="mount-point"
                 data-testid="mount-point-input"
                 placeholder="/mnt/media"
-                value={newPool.mount_point}
-                onChange={(e) => setNewPool({ ...newPool, mount_point: e.target.value })}
+                value={newPool.path}
+                onChange={(e) => setNewPool({ ...newPool, path: e.target.value })}
                 className="rounded-sm font-mono text-sm"
               />
             </div>
