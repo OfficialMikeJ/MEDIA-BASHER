@@ -114,8 +114,8 @@ class MediaBasherAPITester:
         """Test system metrics endpoint"""
         success, status, response = self.make_request('GET', 'system/metrics', expected_status=200)
         
-        if success and 'cpu_percent' in response and 'ram_total' in response:
-            return self.log_test("System Metrics", True, f"- CPU: {response['cpu_percent']}%, RAM: {response['ram_percent']}%")
+        if success and 'cpu' in response and 'memory' in response:
+            return self.log_test("System Metrics", True, f"- CPU: {response['cpu']}%, Memory: {response['memory']['percent']}%")
         else:
             return self.log_test("System Metrics", False, f"- Status: {status}, Response: {response}")
 
