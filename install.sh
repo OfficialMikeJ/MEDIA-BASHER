@@ -163,13 +163,15 @@ fi
 
 echo "  Repository cloned successfully"
 
-# Create installation directory and move files
-mkdir -p ${INSTALL_DIR}
-rm -rf ${INSTALL_DIR}/*
-cp -r ${TEMP_DIR}/media-basher/* ${INSTALL_DIR}/
+# Create installation directory structure
+mkdir -p ${INSTALL_DIR}/media-basher
+rm -rf ${INSTALL_DIR}/media-basher/*
+
+# Copy files to installation directory
+cp -r ${TEMP_DIR}/media-basher/* ${INSTALL_DIR}/media-basher/
 rm -rf ${TEMP_DIR}
 
-echo "  Files copied to ${INSTALL_DIR}"
+echo "  Files copied to ${INSTALL_DIR}/media-basher"
 
 # Verify directory structure
 if [ ! -d "${INSTALL_DIR}/backend" ] || [ ! -d "${INSTALL_DIR}/frontend" ]; then
