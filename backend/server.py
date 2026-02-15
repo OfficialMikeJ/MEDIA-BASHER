@@ -250,6 +250,48 @@ def get_containers_list(username: str = Depends(get_current_user)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/containers/{container_id}/start")
+def start_container(container_id: str, username: str = Depends(get_current_user)):
+    if not docker_client:
+        raise HTTPException(status_code=500, detail="Docker is not available")
+    
+    try:
+        container = docker_client.containers.get(container_id)
+        container.start()
+        return {"message": "Container started successfully"}
+    except docker.errors.NotFound:
+        raise HTTPException(status_code=404, detail="Container not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/containers/{container_id}/stop")
+def stop_container(container_id: str, username: str = Depends(get_current_user)):
+    if not docker_client:
+        raise HTTPException(status_code=500, detail="Docker is not available")
+    
+    try:
+        container = docker_client.containers.get(container_id)
+        container.stop()
+        return {"message": "Container stopped successfully"}
+    except docker.errors.NotFound:
+        raise HTTPException(status_code=404, detail="Container not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/containers/{container_id}")
+def delete_container(container_id: str, username: str = Depends(get_current_user)):
+    if not docker_client:
+        raise HTTPException(status_code=500, detail="Docker is not available")
+    
+    try:
+        container = docker_client.containers.get(container_id)
+        container.remove(force=True)
+        return {"message": "Container removed successfully"}
+    except docker.errors.NotFound:
+        raise HTTPException(status_code=404, detail="Container not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/storage/pools")
 def add_storage_pool(pool: StoragePoolCreate, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
     # Validate path exists
