@@ -316,6 +316,52 @@ def seed_apps(db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Apps seeded successfully"}
 
+# Stub endpoints for advanced features (to prevent 404 errors)
+@api_router.get("/settings")
+def get_settings(username: str = Depends(get_current_user)):
+    return {
+        "ddns_enabled": False,
+        "ssl_enabled": False
+    }
+
+@api_router.get("/advanced/notifications")
+def get_notifications(username: str = Depends(get_current_user)):
+    return []
+
+@api_router.get("/advanced/backup/list")
+def get_backups(username: str = Depends(get_current_user)):
+    return []
+
+@api_router.get("/advanced/images/updates")
+def check_updates(username: str = Depends(get_current_user)):
+    return {"updates_available": False, "containers": []}
+
+@api_router.get("/advanced/alerts/rules")
+def get_alert_rules(username: str = Depends(get_current_user)):
+    return []
+
+@api_router.get("/advanced/containers/resource-heatmap")
+def get_resource_heatmap(username: str = Depends(get_current_user)):
+    return {"heatmap_data": []}
+
+@api_router.get("/advanced/networks")
+def get_networks(username: str = Depends(get_current_user)):
+    if not docker_client:
+        return []
+    try:
+        networks = docker_client.networks.list()
+        return [{
+            "id": n.id[:12],
+            "name": n.name,
+            "driver": n.attrs.get("Driver", "unknown")
+        } for n in networks]
+    except:
+        return []
+
+@api_router.get("/advanced/compose/stacks")
+def get_compose_stacks(username: str = Depends(get_current_user)):
+    return []
+
 # Import advanced routes
 # from server_advanced import advanced_router
 # api_router.include_router(advanced_router)
