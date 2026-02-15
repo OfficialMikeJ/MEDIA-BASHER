@@ -203,7 +203,7 @@ deactivate
 
 # Setup frontend
 echo "  Setting up frontend..."
-cd ${INSTALL_DIR}/frontend
+cd ${INSTALL_DIR}/media-basher/frontend
 yarn install --silent
 
 # Get server IP
