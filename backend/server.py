@@ -289,11 +289,48 @@ def get_storage_pools(username: str = Depends(get_current_user), db: Session = D
 def get_applications(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
     apps = db.query(AppTemplate).all()
     return [{
+        "id": app.name,
         "name": app.name,
         "logo": app.logo,
         "description": app.description,
-        "repository": app.repository
+        "repository": app.repository,
+        "official": True
     } for app in apps]
+
+@api_router.post("/applications/seed")
+def seed_apps_endpoint(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    return seed_apps(db)
+
+@api_router.post("/applications/install/{app_name}")
+def install_application(app_name: str, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Check if app template exists
+    app = db.query(AppTemplate).filter(AppTemplate.name == app_name).first()
+    if not app:
+        raise HTTPException(status_code=404, detail="Application not found")
+    
+    # Check if Docker is available
+    if not docker_client:
+        raise HTTPException(status_code=500, detail="Docker is not available")
+    
+    try:
+        # Pull the Docker image
+        image_name = app.repository
+        docker_client.images.pull(image_name)
+        
+        # Create and start container
+        container = docker_client.containers.run(
+            image_name,
+            name=app_name.lower().replace(" ", "-"),
+            detach=True,
+            restart_policy={"Name": "unless-stopped"}
+        )
+        
+        return {
+            "message": f"{app_name} installed successfully",
+            "container_id": container.id[:12]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to install: {str(e)}")
 
 @api_router.post("/seed-apps")
 def seed_apps(db: Session = Depends(get_db)):
