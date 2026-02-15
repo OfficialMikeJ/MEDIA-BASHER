@@ -29,19 +29,24 @@ sudo rm -f /etc/apt/keyrings/mongodb-server-7.0.gpg
 sudo apt-get clean
 sudo apt-get update
 
+# Install libssl1.1 (required for MongoDB 5.0 on Ubuntu 24.04)
+echo "Installing libssl1.1 dependency..."
+cd /tmp
+wget http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2_amd64.deb
+sudo dpkg -i libssl1.1_1.1.1f-1ubuntu2_amd64.deb
+rm libssl1.1_1.1.1f-1ubuntu2_amd64.deb
+
 # Install MongoDB 5.0 (better CPU compatibility)
 echo "Installing MongoDB 5.0..."
 curl -fsSL https://www.mongodb.org/static/pgp/server-5.0.asc | sudo gpg --dearmor -o /etc/apt/keyrings/mongodb-server-5.0.gpg
 echo "deb [ arch=amd64,arm64 signed-by=/etc/apt/keyrings/mongodb-server-5.0.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/5.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-5.0.list
 
 sudo apt-get update
-
-# Install with forced dependencies resolution
-sudo apt-get install -y --fix-broken mongodb-org=5.0.* mongodb-org-server=5.0.* mongodb-org-shell=5.0.* mongodb-org-mongos=5.0.* mongodb-org-tools=5.0.*
+sudo apt-get install -y mongodb-org
 
 if [ $? -ne 0 ]; then
-    echo "Failed to install MongoDB 5.0. Trying alternative method..."
-    sudo apt-get install -y mongodb-org
+    echo "Failed to install MongoDB 5.0."
+    exit 1
 fi
 
 # Recreate data directory
