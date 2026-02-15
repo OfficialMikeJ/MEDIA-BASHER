@@ -28,18 +28,18 @@ export default function MonitoringPage() {
       
       setMetrics(prev => [...prev.slice(-50), { // Keep last 50 data points
         timestamp,
-        cpu_percent: currentMetrics.cpu_percent,
-        ram_percent: currentMetrics.memory_percent,
-        disk_percent: currentMetrics.disk_percent
+        cpu_percent: currentMetrics.cpu,
+        ram_percent: currentMetrics.memory.percent,
+        disk_percent: currentMetrics.disk.percent
       }]);
       
       // Calculate aggregated data from current metrics
       setAggregated({
-        cpu_avg: currentMetrics.cpu_percent,
-        cpu_max: currentMetrics.cpu_percent,
-        ram_avg: currentMetrics.memory_percent,
-        ram_max: currentMetrics.memory_percent,
-        disk_avg: currentMetrics.disk_percent,
+        cpu_avg: currentMetrics.cpu,
+        cpu_max: currentMetrics.cpu,
+        ram_avg: currentMetrics.memory.percent,
+        ram_max: currentMetrics.memory.percent,
+        disk_avg: currentMetrics.disk.percent,
         data_points: metrics.length + 1,
         time_range_hours: parseInt(timeRange)
       });
