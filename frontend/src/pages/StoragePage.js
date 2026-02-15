@@ -57,7 +57,7 @@ export default function StoragePage() {
       await api.post('/storage/pools', newPool);
       toast.success('Storage pool added');
       setAddDialog(false);
-      setNewPool({ name: '', mount_point: '', pool_type: 'local' });
+      setNewPool({ name: '', path: '', pool_type: 'local' });
       await loadPools();
     } catch (error) {
       console.error('Error adding storage pool:', error);
