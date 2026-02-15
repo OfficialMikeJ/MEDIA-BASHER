@@ -43,8 +43,8 @@ sudo bash install.sh
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/OfficialMikeJ/media-basher.git
-cd media-basher
+git clone https://github.com/OfficialMikeJ/MEDIA-BASHER.git
+cd MEDIA-BASHER
 ```
 
 2. **Run the installer**
