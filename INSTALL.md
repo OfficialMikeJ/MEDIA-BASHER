@@ -6,7 +6,7 @@
 
 ```bash
 # Download and run installer
-wget https://raw.githubusercontent.com/OfficialMikeJ/media-basher/main/install.sh
+wget https://raw.githubusercontent.com/OfficialMikeJ/MEDIA-BASHER/main/install.sh
 sudo bash install.sh
 ```
 
