@@ -60,7 +60,7 @@ export default function ApplicationsPage() {
   const installApp = async (templateId) => {
     setInstalling(templateId);
     try {
-      const response = await api.post(`/apps/install/${templateId}`);
+      const response = await api.post(`/applications/install/${templateId}`);
       toast.success(response.data.message);
     } catch (error) {
       console.error('Error installing app:', error);
