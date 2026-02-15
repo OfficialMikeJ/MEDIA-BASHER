@@ -152,13 +152,21 @@ echo "[8/8] Setting up Media Basher..."
 mkdir -p ${INSTALL_DIR}
 cd ${INSTALL_DIR}
 
-# Clone or copy application files
-# For now, we'll assume files are in current directory
-if [ -d "/app/backend" ] && [ -d "/app/frontend" ]; then
-    cp -r /app/backend ${INSTALL_DIR}/
-    cp -r /app/frontend ${INSTALL_DIR}/
-    echo "  Application files copied"
+# Clone the repository
+echo "  Cloning Media Basher from GitHub..."
+if [ -d "${INSTALL_DIR}/.git" ]; then
+    echo "  Repository already exists, pulling latest changes..."
+    git pull origin main
+else
+    git clone https://github.com/OfficialMikeJ/MEDIA-BASHER.git ${INSTALL_DIR}
+    if [ $? -ne 0 ]; then
+        echo "  ERROR: Failed to clone repository"
+        echo "  Please ensure the repository is public and accessible"
+        exit 1
+    fi
 fi
+
+echo "  Repository cloned successfully"
 
 # Setup backend
 echo "  Setting up backend..."
