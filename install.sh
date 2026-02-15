@@ -163,21 +163,38 @@ fi
 
 echo "  Repository cloned successfully"
 
+# Debug: Check what was cloned
+echo "  Checking cloned repository structure..."
+ls -la ${TEMP_DIR}/media-basher/
+
 # Create installation directory and move files
 mkdir -p ${INSTALL_DIR}
+
+# Check if backend and frontend exist in cloned repo
+if [ ! -d "${TEMP_DIR}/media-basher/backend" ] || [ ! -d "${TEMP_DIR}/media-basher/frontend" ]; then
+    echo "  ERROR: Cloned repository structure is incorrect"
+    echo "  Contents of cloned repository:"
+    ls -la ${TEMP_DIR}/media-basher/
+    rm -rf ${TEMP_DIR}
+    exit 1
+fi
+
+# Copy files to installation directory
 rm -rf ${INSTALL_DIR}/*
 cp -r ${TEMP_DIR}/media-basher/* ${INSTALL_DIR}/
 rm -rf ${TEMP_DIR}
 
 echo "  Files copied to ${INSTALL_DIR}"
 
-# Verify directory structure
+# Verify directory structure in install location
 if [ ! -d "${INSTALL_DIR}/backend" ] || [ ! -d "${INSTALL_DIR}/frontend" ]; then
-    echo "  ERROR: Repository structure is incorrect"
-    echo "  Expected backend/ and frontend/ directories"
+    echo "  ERROR: Files not copied correctly"
+    echo "  Contents of ${INSTALL_DIR}:"
     ls -la ${INSTALL_DIR}
     exit 1
 fi
+
+echo "  Directory structure verified successfully"
 
 # Setup backend
 echo "  Setting up backend..."
