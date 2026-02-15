@@ -49,7 +49,7 @@ export default function ApplicationsPage() {
 
   const seedApps = async () => {
     try {
-      await api.post('/seed-apps');
+      await api.post('/applications/seed');
       await loadApps();
       toast.success('App library initialized');
     } catch (error) {
