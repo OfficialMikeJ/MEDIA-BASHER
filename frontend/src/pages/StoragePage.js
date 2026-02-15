@@ -30,7 +30,7 @@ export default function StoragePage() {
   const [addDialog, setAddDialog] = useState(false);
   const [newPool, setNewPool] = useState({
     name: '',
-    mount_point: '',
+    path: '',
     pool_type: 'local',
   });
 
