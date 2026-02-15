@@ -9,7 +9,7 @@ class MediaBasherAPITester:
         self.token = None
         self.tests_run = 0
         self.tests_passed = 0
-        self.user_id = None
+        self.username = None
 
     def log_test(self, name, success, details=""):
         """Log test results"""
