@@ -47,7 +47,7 @@ After pushing, verify these files are on GitHub:
 Once pushed, users can install with:
 
 ```bash
-wget https://raw.githubusercontent.com/OfficialMikeJ/media-basher/main/install.sh
+wget https://raw.githubusercontent.com/OfficialMikeJ/MEDIA-BASHER/main/install.sh
 sudo bash install.sh
 ```
 
@@ -57,7 +57,7 @@ If you have GitHub CLI installed:
 
 ```bash
 cd /app
-gh repo create OfficialMikeJ/media-basher --public --source=. --remote=origin --push
+gh repo create OfficialMikeJ/MEDIA-BASHER --public --source=. --remote=origin --push
 ```
 
 ## Files Ready to Push
