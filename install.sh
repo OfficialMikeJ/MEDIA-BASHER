@@ -163,27 +163,25 @@ fi
 
 echo "  Repository cloned successfully"
 
-# Create installation directory structure
-mkdir -p ${INSTALL_DIR}/media-basher
-rm -rf ${INSTALL_DIR}/media-basher/*
-
-# Copy files to installation directory
-cp -r ${TEMP_DIR}/media-basher/* ${INSTALL_DIR}/media-basher/
+# Create installation directory and move files
+mkdir -p ${INSTALL_DIR}
+rm -rf ${INSTALL_DIR}/*
+cp -r ${TEMP_DIR}/media-basher/* ${INSTALL_DIR}/
 rm -rf ${TEMP_DIR}
 
-echo "  Files copied to ${INSTALL_DIR}/media-basher"
+echo "  Files copied to ${INSTALL_DIR}"
 
 # Verify directory structure
-if [ ! -d "${INSTALL_DIR}/media-basher/backend" ] || [ ! -d "${INSTALL_DIR}/media-basher/frontend" ]; then
+if [ ! -d "${INSTALL_DIR}/backend" ] || [ ! -d "${INSTALL_DIR}/frontend" ]; then
     echo "  ERROR: Repository structure is incorrect"
     echo "  Expected backend/ and frontend/ directories"
-    ls -la ${INSTALL_DIR}/media-basher
+    ls -la ${INSTALL_DIR}
     exit 1
 fi
 
 # Setup backend
 echo "  Setting up backend..."
-cd ${INSTALL_DIR}/media-basher/backend
+cd ${INSTALL_DIR}/backend
 python3.11 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip -qq
@@ -203,7 +201,7 @@ deactivate
 
 # Setup frontend
 echo "  Setting up frontend..."
-cd ${INSTALL_DIR}/media-basher/frontend
+cd ${INSTALL_DIR}/frontend
 yarn install --silent
 
 # Get server IP
@@ -250,7 +248,7 @@ echo ""
 echo "Creating admin user..."
 
 # Start services temporarily
-cd ${INSTALL_DIR}/media-basher/backend
+cd ${INSTALL_DIR}/backend
 source venv/bin/activate
 uvicorn server:app --host 0.0.0.0 --port 8001 > /dev/null 2>&1 &
 BACKEND_PID=$!
@@ -295,8 +293,8 @@ echo "To find your storage mount point, run:"
 echo "  df -h | grep -E 'T|G' | grep -v tmpfs"
 echo ""
 echo "To start the services manually:"
-echo "  Backend:  cd ${INSTALL_DIR}/media-basher/backend && source venv/bin/activate && uvicorn server:app --host 0.0.0.0 --port 8001"
-echo "  Frontend: cd ${INSTALL_DIR}/media-basher/frontend && yarn start"
+echo "  Backend:  cd ${INSTALL_DIR}/backend && source venv/bin/activate && uvicorn server:app --host 0.0.0.0 --port 8001"
+echo "  Frontend: cd ${INSTALL_DIR}/frontend && yarn start"
 echo ""
 echo "To set up as a system service, create systemd unit files."
 echo ""
