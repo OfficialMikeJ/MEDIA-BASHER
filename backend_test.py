@@ -70,20 +70,22 @@ class MediaBasherAPITester:
             return self.log_test("User Registration", False, f"- Status: {status}, Response: {response}")
 
     def test_valid_login(self):
-        """Test login with valid credentials (admin/admin123)"""
+        """Test login with existing user mike/test123 as specified in review request"""
         login_data = {
-            "username": "admin",
-            "password": "admin123"
+            "username": "mike",
+            "password": "test123"
         }
         
         success, status, response = self.make_request('POST', 'auth/login', login_data, 200)
         
-        if success and 'access_token' in response:
-            self.token = response['access_token']
-            self.user_id = response['user']['id']
-            return self.log_test("Valid Login (admin/admin123)", True, f"- Token received")
+        if success and 'token' in response:
+            self.token = response['token']
+            self.username = response.get('username')
+            first_login = response.get('first_login')
+            return self.log_test("Valid Login (mike/test123)", True, 
+                               f"- Token received, Username: {self.username}, First login: {first_login}")
         else:
-            return self.log_test("Valid Login (admin/admin123)", False, f"- Status: {status}, Response: {response}")
+            return self.log_test("Valid Login (mike/test123)", False, f"- Status: {status}, Response: {response}")
 
     def test_invalid_login(self):
         """Test login with invalid credentials - should return 401"""
