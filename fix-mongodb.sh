@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 echo "========================================="
 echo "   MongoDB Fix Script"
 echo "========================================="
@@ -9,16 +7,27 @@ echo ""
 
 # Check CPU info
 echo "Checking CPU capabilities..."
-grep -o 'avx[^ ]*' /proc/cpuinfo | sort -u
+grep -o 'avx[^ ]*' /proc/cpuinfo | sort -u || echo "No AVX support detected"
 echo ""
 
 # Stop and remove MongoDB 7.0
 echo "Removing MongoDB 7.0..."
 sudo systemctl stop mongod || true
-sudo apt-get remove -y mongodb-org mongodb-org-server mongodb-org-shell mongodb-org-mongos mongodb-org-tools
+
+# Complete purge of MongoDB 7.0
+sudo apt-get purge -y mongodb-org* || true
+sudo apt-get autoremove -y
+sudo apt-get autoclean
+
+# Remove all MongoDB files and configs
 sudo rm -rf /var/lib/mongodb
 sudo rm -rf /var/log/mongodb
 sudo rm -f /etc/apt/sources.list.d/mongodb-org-7.0.list
+sudo rm -f /etc/apt/keyrings/mongodb-server-7.0.gpg
+
+# Clean apt cache
+sudo apt-get clean
+sudo apt-get update
 
 # Install MongoDB 5.0 (better CPU compatibility)
 echo "Installing MongoDB 5.0..."
@@ -26,7 +35,14 @@ curl -fsSL https://www.mongodb.org/static/pgp/server-5.0.asc | sudo gpg --dearmo
 echo "deb [ arch=amd64,arm64 signed-by=/etc/apt/keyrings/mongodb-server-5.0.gpg ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/5.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-5.0.list
 
 sudo apt-get update
-sudo apt-get install -y mongodb-org
+
+# Install with forced dependencies resolution
+sudo apt-get install -y --fix-broken mongodb-org=5.0.* mongodb-org-server=5.0.* mongodb-org-shell=5.0.* mongodb-org-mongos=5.0.* mongodb-org-tools=5.0.*
+
+if [ $? -ne 0 ]; then
+    echo "Failed to install MongoDB 5.0. Trying alternative method..."
+    sudo apt-get install -y mongodb-org
+fi
 
 # Recreate data directory
 sudo mkdir -p /var/lib/mongodb
