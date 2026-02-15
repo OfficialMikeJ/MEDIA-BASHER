@@ -26,7 +26,7 @@ git add .
 git commit -m "Initial commit - Media Basher v1.0.0"
 
 # Add your GitHub repository as remote
-git remote add origin https://github.com/OfficialMikeJ/media-basher.git
+git remote add origin https://github.com/OfficialMikeJ/MEDIA-BASHER.git
 
 # Push to GitHub
 git branch -M main
