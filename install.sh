@@ -148,25 +148,36 @@ fi
 echo ""
 echo "[8/8] Setting up Media Basher..."
 
-# Create installation directory
-mkdir -p ${INSTALL_DIR}
-cd ${INSTALL_DIR}
-
-# Clone the repository
+# Create temporary directory for cloning
+TEMP_DIR=$(mktemp -d)
 echo "  Cloning Media Basher from GitHub..."
-if [ -d "${INSTALL_DIR}/.git" ]; then
-    echo "  Repository already exists, pulling latest changes..."
-    git pull origin main
-else
-    git clone https://github.com/OfficialMikeJ/MEDIA-BASHER.git ${INSTALL_DIR}
-    if [ $? -ne 0 ]; then
-        echo "  ERROR: Failed to clone repository"
-        echo "  Please ensure the repository is public and accessible"
-        exit 1
-    fi
+
+# Clone to temp directory first
+git clone https://github.com/OfficialMikeJ/MEDIA-BASHER.git ${TEMP_DIR}/media-basher
+if [ $? -ne 0 ]; then
+    echo "  ERROR: Failed to clone repository"
+    echo "  Please ensure the repository is public and accessible"
+    rm -rf ${TEMP_DIR}
+    exit 1
 fi
 
 echo "  Repository cloned successfully"
+
+# Create installation directory and move files
+mkdir -p ${INSTALL_DIR}
+rm -rf ${INSTALL_DIR}/*
+cp -r ${TEMP_DIR}/media-basher/* ${INSTALL_DIR}/
+rm -rf ${TEMP_DIR}
+
+echo "  Files copied to ${INSTALL_DIR}"
+
+# Verify directory structure
+if [ ! -d "${INSTALL_DIR}/backend" ] || [ ! -d "${INSTALL_DIR}/frontend" ]; then
+    echo "  ERROR: Repository structure is incorrect"
+    echo "  Expected backend/ and frontend/ directories"
+    ls -la ${INSTALL_DIR}
+    exit 1
+fi
 
 # Setup backend
 echo "  Setting up backend..."
