@@ -183,6 +183,44 @@ Media Basher is designed to be extensible:
 2. **Third-Party App Store**: Upload custom app templates via FTP or terminal
 3. **No Official Support**: This is a community-driven project
 
+## Troubleshooting
+
+### Installation Issues
+
+**Problem: `cd: /opt/media-basher/backend: No such file or directory`**
+- **Solution**: The updated install.sh (v1.0.0+) fixes this by cloning to a temp directory first. Re-download the script:
+  ```bash
+  wget https://raw.githubusercontent.com/OfficialMikeJ/MEDIA-BASHER/main/install.sh
+  sudo bash install.sh
+  ```
+
+**Problem: Repository clone fails with 404**
+- **Solution**: Ensure the repository is public on GitHub
+- Verify the URL: `https://github.com/OfficialMikeJ/MEDIA-BASHER`
+
+**Problem: Low disk space warning despite having large storage**
+- **Solution**: The installer checks root partition (`/`) only. Add your large storage pools after installation via the Storage page
+
+**Problem: Services not starting**
+- Check backend logs: `cd /opt/media-basher/backend && source venv/bin/activate && python server.py`
+- Check MongoDB status: `sudo systemctl status mongod`
+- Check Docker status: `sudo systemctl status docker`
+
+### Runtime Issues
+
+**Problem: Cannot access dashboard**
+- Verify services are running (see "Starting Services" section)
+- Check firewall: `sudo ufw allow 3000` and `sudo ufw allow 8001`
+- Use server IP, not localhost
+
+**Problem: Docker containers not showing**
+- Ensure Docker daemon is running: `sudo systemctl status docker`
+- Check Docker permissions for the user running the backend
+
+**Problem: Storage pool not detected**
+- Run `df -h` to find your mount point
+- Use the full mount path (e.g., `/mnt/storage` not `storage`)
+
 ## Roadmap
 
 - [ ] Android monitoring application
