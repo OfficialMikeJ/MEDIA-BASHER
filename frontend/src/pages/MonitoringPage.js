@@ -21,17 +21,32 @@ export default function MonitoringPage() {
 
   const loadMetrics = async () => {
     try {
-      const [historyRes, aggregatedRes] = await Promise.all([
-        api.get(`/advanced/metrics/history?hours=${timeRange}`),
-        api.get(`/advanced/metrics/aggregated?hours=${timeRange}`)
-      ]);
+      const response = await api.get('/system/metrics');
+      // Transform single metrics response to array format for charts
+      const currentMetrics = response.data;
+      const timestamp = new Date().toISOString();
       
-      setMetrics(historyRes.data.metrics || []);
-      setAggregated(aggregatedRes.data);
+      setMetrics(prev => [...prev.slice(-50), { // Keep last 50 data points
+        timestamp,
+        cpu_percent: currentMetrics.cpu_percent,
+        ram_percent: currentMetrics.memory_percent,
+        disk_percent: currentMetrics.disk_percent
+      }]);
+      
+      // Calculate aggregated data from current metrics
+      setAggregated({
+        cpu_avg: currentMetrics.cpu_percent,
+        cpu_max: currentMetrics.cpu_percent,
+        ram_avg: currentMetrics.memory_percent,
+        ram_max: currentMetrics.memory_percent,
+        disk_avg: currentMetrics.disk_percent,
+        data_points: metrics.length + 1,
+        time_range_hours: parseInt(timeRange)
+      });
     } catch (error) {
       console.error('Error loading metrics:', error);
       if (loading) {
-        toast.error('Failed to load metrics history');
+        toast.error('Failed to load system metrics');
       }
     } finally {
       setLoading(false);
