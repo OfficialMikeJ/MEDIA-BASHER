@@ -172,16 +172,6 @@ def get_me(username: str = Depends(get_current_user), db: Session = Depends(get_
         "email": user.email,
         "first_login": user.first_login
     }
-
-@api_router.post("/auth/mark-onboarded")
-def mark_onboarded(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == username).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    user.first_login = False
-    db.commit()
-    return {"message": "User marked as onboarded"}
         "username": user.username,
         "email": user.email,
         "first_login": user.first_login
