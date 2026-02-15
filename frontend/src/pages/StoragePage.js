@@ -134,7 +134,7 @@ export default function StoragePage() {
                         {pool.name}
                       </CardTitle>
                       <div className="mt-2 space-y-1">
-                        <p className="text-sm text-muted-foreground font-mono">{pool.mount_point}</p>
+                        <p className="text-sm text-muted-foreground font-mono">{pool.path}</p>
                         <Badge variant="outline" className="rounded-sm text-xs font-mono uppercase mt-2">
                           {pool.pool_type}
                         </Badge>
