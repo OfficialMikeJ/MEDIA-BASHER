@@ -2,11 +2,10 @@ from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
-from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone, timedelta
@@ -16,14 +15,47 @@ import docker
 import psutil
 import pynvml
 import shutil
+from sqlalchemy import create_engine, Column, String, Boolean, DateTime, Text
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, Session
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
-mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
-db = client[os.environ['DB_NAME']]
+# PostgreSQL connection
+DATABASE_URL = os.environ.get('DATABASE_URL', 'postgresql://mediabasher:mediabasher123@localhost/media_basher')
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+# Database Models
+class User(Base):
+    __tablename__ = "users"
+    
+    username = Column(String, primary_key=True, index=True)
+    hashed_password = Column(String, nullable=False)
+    email = Column(String, nullable=True)
+    first_login = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+class AppTemplate(Base):
+    __tablename__ = "app_templates"
+    
+    name = Column(String, primary_key=True, index=True)
+    logo = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    repository = Column(String, nullable=True)
+
+class StoragePool(Base):
+    __tablename__ = "storage_pools"
+    
+    name = Column(String, primary_key=True, index=True)
+    path = Column(String, nullable=False)
+    size = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+# Create tables
+Base.metadata.create_all(bind=engine)
 
 # Docker client
 try:
@@ -42,6 +74,14 @@ security = HTTPBearer()
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
+# Database dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 # ============ MODELS ============
 
 class UserCreate(BaseModel):
@@ -53,81 +93,11 @@ class UserLogin(BaseModel):
     username: str
     password: str
 
-class User(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    username: str
-    email: Optional[str] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    first_login: bool = True
-
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    user: User
-
-class SystemMetrics(BaseModel):
-    cpu_percent: float
-    cpu_count: int
-    ram_total: int
-    ram_used: int
-    ram_percent: float
-    storage_total: int
-    storage_used: int
-    storage_percent: float
-    gpu_info: Optional[Dict[str, Any]] = None
-
-class DockerContainer(BaseModel):
-    id: str
-    name: str
-    image: str
-    status: str
-    ports: Optional[Dict[str, Any]] = None
-    created: str
-
-class AppTemplate(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str
-    description: str
-    icon: Optional[str] = None
-    category: str
-    docker_image: str
-    docker_compose: Optional[Dict[str, Any]] = None
-    github_repo: Optional[str] = None
-    ports: Optional[List[int]] = None
-    environment: Optional[Dict[str, str]] = None
-    volumes: Optional[List[str]] = None
-    official: bool = True
-
 class StoragePoolCreate(BaseModel):
     name: str
-    mount_point: str
-    pool_type: str  # local, remote, network
+    path: str
 
-class StoragePool(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    name: str
-    mount_point: str
-    pool_type: str  # local, remote, network
-    total_space: int
-    used_space: int
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class SystemSettings(BaseModel):
-    model_config = ConfigDict(extra="ignore")
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    ddns_enabled: bool = False
-    ddns_provider: Optional[str] = "noip"
-    ddns_hostname: Optional[str] = None
-    ddns_username: Optional[str] = None
-    ddns_password: Optional[str] = None
-    ssl_enabled: bool = False
-    ssl_email: Optional[str] = None
-    ssl_domains: Optional[List[str]] = None
-
-# ============ AUTH HELPERS ============
+# ============ AUTH FUNCTIONS ============
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
@@ -135,383 +105,186 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
-def create_token(user_id: str) -> str:
+def create_jwt_token(username: str) -> str:
+    expiration = datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
     payload = {
-        "user_id": user_id,
-        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRATION_HOURS)
+        "sub": username,
+        "exp": expiration
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> Dict:
+def verify_jwt_token(token: str) -> str:
     try:
-        token = credentials.credentials
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user_id = payload.get("user_id")
-        user = await db.users.find_one({"id": user_id}, {"_id": 0})
-        if not user:
-            raise HTTPException(status_code=401, detail="User not found")
-        return user
+        return payload["sub"]
     except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except Exception as e:
+        raise HTTPException(status_code=401, detail="Token has expired")
+    except jwt.InvalidTokenError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-# ============ SYSTEM MONITORING ============
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)) -> str:
+    username = verify_jwt_token(credentials.credentials)
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    return username
 
-def get_gpu_info():
-    try:
-        pynvml.nvmlInit()
-        device_count = pynvml.nvmlDeviceGetCount()
-        if device_count == 0:
-            return {"installed": False, "message": "No GPU detected"}
-        
-        gpu_data = []
-        for i in range(device_count):
-            handle = pynvml.nvmlDeviceGetHandleByIndex(i)
-            name = pynvml.nvmlDeviceGetName(handle)
-            memory = pynvml.nvmlDeviceGetMemoryInfo(handle)
-            utilization = pynvml.nvmlDeviceGetUtilizationRates(handle)
-            
-            gpu_data.append({
-                "name": name,
-                "memory_total": memory.total,
-                "memory_used": memory.used,
-                "memory_free": memory.free,
-                "utilization": utilization.gpu
-            })
-        
-        pynvml.nvmlShutdown()
-        return {"installed": True, "gpus": gpu_data}
-    except Exception as e:
-        return {"installed": False, "message": str(e)}
+# ============ ROUTES ============
 
-# ============ AUTH ROUTES ============
-
-@api_router.post("/auth/register", response_model=TokenResponse)
-async def register(user_data: UserCreate):
-    existing_user = await db.users.find_one({"username": user_data.username}, {"_id": 0})
+@api_router.post("/auth/register")
+def register(user_data: UserCreate, db: Session = Depends(get_db)):
+    existing_user = db.query(User).filter(User.username == user_data.username).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already exists")
     
-    hashed_pw = hash_password(user_data.password)
-    user = User(username=user_data.username, email=user_data.email)
+    new_user = User(
+        username=user_data.username,
+        hashed_password=hash_password(user_data.password),
+        email=user_data.email,
+        first_login=True
+    )
+    db.add(new_user)
+    db.commit()
     
-    user_dict = user.model_dump()
-    user_dict['password'] = hashed_pw
-    user_dict['created_at'] = user_dict['created_at'].isoformat()
-    
-    await db.users.insert_one(user_dict)
-    
-    token = create_token(user.id)
-    return TokenResponse(access_token=token, user=user)
+    token = create_jwt_token(user_data.username)
+    return {"message": "User created successfully", "token": token}
 
-@api_router.post("/auth/login", response_model=TokenResponse)
-async def login(credentials: UserLogin):
-    user = await db.users.find_one({"username": credentials.username}, {"_id": 0})
-    if not user or not verify_password(credentials.password, user['password']):
+@api_router.post("/auth/login")
+def login(credentials: UserLogin, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == credentials.username).first()
+    if not user or not verify_password(credentials.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    token = create_token(user['id'])
-    user_obj = User(**{k: v for k, v in user.items() if k != 'password'})
-    return TokenResponse(access_token=token, user=user_obj)
+    token = create_jwt_token(credentials.username)
+    return {
+        "token": token,
+        "username": user.username,
+        "first_login": user.first_login
+    }
 
-@api_router.get("/auth/me", response_model=User)
-async def get_me(current_user: Dict = Depends(get_current_user)):
-    return User(**current_user)
-
-@api_router.post("/auth/mark-onboarded")
-async def mark_onboarded(current_user: Dict = Depends(get_current_user)):
-    await db.users.update_one({"id": current_user['id']}, {"$set": {"first_login": False}})
-    return {"success": True}
-
-# ============ SYSTEM ROUTES ============
-
-@api_router.get("/system/metrics", response_model=SystemMetrics)
-async def get_system_metrics(current_user: Dict = Depends(get_current_user)):
+@api_router.get("/system/metrics")
+def get_system_metrics(username: str = Depends(get_current_user)):
     cpu_percent = psutil.cpu_percent(interval=1)
-    cpu_count = psutil.cpu_count()
-    
-    ram = psutil.virtual_memory()
-    
+    memory = psutil.virtual_memory()
     disk = psutil.disk_usage('/')
     
-    gpu_info = get_gpu_info()
+    gpu_info = None
+    try:
+        pynvml.nvmlInit()
+        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+        gpu_name = pynvml.nvmlDeviceGetName(handle)
+        gpu_mem = pynvml.nvmlDeviceGetMemoryInfo(handle)
+        gpu_info = {
+            "name": gpu_name,
+            "memory_used": gpu_mem.used,
+            "memory_total": gpu_mem.total
+        }
+    except:
+        pass
     
-    return SystemMetrics(
-        cpu_percent=cpu_percent,
-        cpu_count=cpu_count,
-        ram_total=ram.total,
-        ram_used=ram.used,
-        ram_percent=ram.percent,
-        storage_total=disk.total,
-        storage_used=disk.used,
-        storage_percent=disk.percent,
-        gpu_info=gpu_info
-    )
+    return {
+        "cpu": cpu_percent,
+        "memory": {
+            "used": memory.used,
+            "total": memory.total,
+            "percent": memory.percent
+        },
+        "disk": {
+            "used": disk.used,
+            "total": disk.total,
+            "percent": disk.percent
+        },
+        "gpu": gpu_info
+    }
 
-# ============ DOCKER/CONTAINER ROUTES ============
-
-@api_router.get("/containers/list", response_model=List[DockerContainer])
-async def list_containers(current_user: Dict = Depends(get_current_user)):
+@api_router.get("/containers")
+def get_containers(username: str = Depends(get_current_user)):
     if not docker_client:
         return []
     
-    containers = docker_client.containers.list(all=True)
-    result = []
-    for container in containers:
-        result.append(DockerContainer(
-            id=container.id[:12],
-            name=container.name,
-            image=container.image.tags[0] if container.image.tags else "unknown",
-            status=container.status,
-            ports=container.ports,
-            created=container.attrs['Created']
-        ))
-    return result
+    try:
+        containers = docker_client.containers.list(all=True)
+        return [{
+            "id": c.id[:12],
+            "name": c.name,
+            "status": c.status,
+            "image": c.image.tags[0] if c.image.tags else "unknown"
+        } for c in containers]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.post("/containers/{container_id}/start")
-async def start_container(container_id: str, current_user: Dict = Depends(get_current_user)):
-    if not docker_client:
-        raise HTTPException(status_code=503, detail="Docker not available")
+@api_router.post("/storage/pools")
+def add_storage_pool(pool: StoragePoolCreate, username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    existing = db.query(StoragePool).filter(StoragePool.name == pool.name).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Storage pool already exists")
     
     try:
-        container = docker_client.containers.get(container_id)
-        container.start()
-        return {"success": True, "message": "Container started"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@api_router.post("/containers/{container_id}/stop")
-async def stop_container(container_id: str, current_user: Dict = Depends(get_current_user)):
-    if not docker_client:
-        raise HTTPException(status_code=503, detail="Docker not available")
+        disk_usage = shutil.disk_usage(pool.path)
+        size = f"{disk_usage.total / (1024**3):.2f} GB"
+    except:
+        size = "Unknown"
     
-    try:
-        container = docker_client.containers.get(container_id)
-        container.stop()
-        return {"success": True, "message": "Container stopped"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-@api_router.delete("/containers/{container_id}")
-async def remove_container(container_id: str, current_user: Dict = Depends(get_current_user)):
-    if not docker_client:
-        raise HTTPException(status_code=503, detail="Docker not available")
-    
-    try:
-        container = docker_client.containers.get(container_id)
-        container.remove(force=True)
-        return {"success": True, "message": "Container removed"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-# ============ APP TEMPLATE ROUTES ============
-
-@api_router.get("/apps/templates", response_model=List[AppTemplate])
-async def get_app_templates(current_user: Dict = Depends(get_current_user)):
-    templates = await db.app_templates.find({}, {"_id": 0}).to_list(1000)
-    return templates
-
-@api_router.post("/apps/templates", response_model=AppTemplate)
-async def create_app_template(template: AppTemplate, current_user: Dict = Depends(get_current_user)):
-    template_dict = template.model_dump()
-    await db.app_templates.insert_one(template_dict)
-    return template
-
-@api_router.post("/apps/install/{template_id}")
-async def install_app(template_id: str, current_user: Dict = Depends(get_current_user)):
-    if not docker_client:
-        raise HTTPException(status_code=503, detail="Docker not available")
-    
-    template = await db.app_templates.find_one({"id": template_id}, {"_id": 0})
-    if not template:
-        raise HTTPException(status_code=404, detail="Template not found")
-    
-    try:
-        # Pull the image
-        docker_client.images.pull(template['docker_image'])
-        
-        # Create container
-        container = docker_client.containers.run(
-            template['docker_image'],
-            name=f"{template['name'].lower().replace(' ', '-')}-{uuid.uuid4().hex[:8]}",
-            detach=True,
-            environment=template.get('environment', {}),
-            ports=template.get('ports', {}),
-            volumes=template.get('volumes', [])
-        )
-        
-        return {"success": True, "container_id": container.id, "message": f"{template['name']} installed successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-# ============ STORAGE ROUTES ============
-
-@api_router.get("/storage/pools", response_model=List[StoragePool])
-async def get_storage_pools(current_user: Dict = Depends(get_current_user)):
-    pools = await db.storage_pools.find({}, {"_id": 0}).to_list(1000)
-    return pools
-
-@api_router.post("/storage/pools", response_model=StoragePool)
-async def add_storage_pool(pool_input: StoragePoolCreate, current_user: Dict = Depends(get_current_user)):
-    # Check if mount point exists
-    if not os.path.exists(pool_input.mount_point):
-        raise HTTPException(status_code=400, detail="Mount point does not exist")
-    
-    # Get disk usage
-    try:
-        usage = shutil.disk_usage(pool_input.mount_point)
-        pool = StoragePool(
-            name=pool_input.name,
-            mount_point=pool_input.mount_point,
-            pool_type=pool_input.pool_type,
-            total_space=usage.total,
-            used_space=usage.used
-        )
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Cannot access mount point: {str(e)}")
-    
-    pool_dict = pool.model_dump()
-    pool_dict['created_at'] = pool_dict['created_at'].isoformat()
-    await db.storage_pools.insert_one(pool_dict)
-    return pool
-
-@api_router.delete("/storage/pools/{pool_id}")
-async def remove_storage_pool(pool_id: str, current_user: Dict = Depends(get_current_user)):
-    result = await db.storage_pools.delete_one({"id": pool_id})
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Storage pool not found")
-    return {"success": True}
-
-# ============ SETTINGS ROUTES ============
-
-@api_router.get("/settings", response_model=SystemSettings)
-async def get_settings(current_user: Dict = Depends(get_current_user)):
-    settings = await db.system_settings.find_one({}, {"_id": 0})
-    if not settings:
-        # Create default settings
-        default_settings = SystemSettings()
-        await db.system_settings.insert_one(default_settings.model_dump())
-        return default_settings
-    return SystemSettings(**settings)
-
-@api_router.put("/settings")
-async def update_settings(settings: SystemSettings, current_user: Dict = Depends(get_current_user)):
-    await db.system_settings.update_one(
-        {},
-        {"$set": settings.model_dump()},
-        upsert=True
+    new_pool = StoragePool(
+        name=pool.name,
+        path=pool.path,
+        size=size
     )
-    return {"success": True}
+    db.add(new_pool)
+    db.commit()
+    
+    return {"message": "Storage pool added", "name": pool.name, "size": size}
 
-# ============ SEED DATA ============
+@api_router.get("/storage/pools")
+def get_storage_pools(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    pools = db.query(StoragePool).all()
+    return [{
+        "name": p.name,
+        "path": p.path,
+        "size": p.size
+    } for p in pools]
 
 @api_router.post("/seed-apps")
-async def seed_app_templates():
-    # Check if already seeded
-    count = await db.app_templates.count_documents({})
-    if count > 0:
-        return {"message": "Apps already seeded"}
-    
-    templates = [
-        {
-            "id": str(uuid.uuid4()),
-            "name": "Jellyfin",
-            "description": "Free Software Media System",
-            "category": "Media Server",
-            "docker_image": "jellyfin/jellyfin:latest",
-            "github_repo": "https://github.com/jellyfin/jellyfin",
-            "ports": [8096],
-            "official": True
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "name": "Jellyseerr",
-            "description": "Request management and media discovery tool",
-            "category": "Media Management",
-            "docker_image": "fallenbagel/jellyseerr:latest",
-            "github_repo": "https://github.com/Fallenbagel/jellyseerr",
-            "ports": [5055],
-            "official": True
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "name": "Transmission",
-            "description": "Fast, easy, and free BitTorrent client",
-            "category": "Download",
-            "docker_image": "linuxserver/transmission:latest",
-            "github_repo": "https://github.com/transmission/transmission",
-            "ports": [9091],
-            "official": True
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "name": "Sonarr",
-            "description": "Smart PVR for newsgroup and bittorrent users",
-            "category": "Media Management",
-            "docker_image": "linuxserver/sonarr:latest",
-            "github_repo": "https://github.com/Sonarr/Sonarr",
-            "ports": [8989],
-            "official": True
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "name": "Radarr",
-            "description": "Movie collection manager for Usenet and BitTorrent users",
-            "category": "Media Management",
-            "docker_image": "linuxserver/radarr:latest",
-            "github_repo": "https://github.com/Radarr/Radarr",
-            "ports": [7878],
-            "official": True
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "name": "Plex",
-            "description": "Stream Movies & TV Shows",
-            "category": "Media Server",
-            "docker_image": "plexinc/pms-docker:latest",
-            "github_repo": "https://github.com/plexinc/pms-docker",
-            "ports": [32400],
-            "official": True
-        },
-        {
-            "id": str(uuid.uuid4()),
-            "name": "Portainer",
-            "description": "Container management platform",
-            "category": "Management",
-            "docker_image": "portainer/portainer-ce:latest",
-            "github_repo": "https://github.com/portainer/portainer",
-            "ports": [9000],
-            "official": True
-        }
+def seed_apps(db: Session = Depends(get_db)):
+    apps = [
+        {"name": "Jellyfin", "logo": "🎬", "description": "Free Software Media System", "repository": "jellyfin/jellyfin"},
+        {"name": "Jellyseerr", "logo": "🎭", "description": "Request management", "repository": "fallenbagel/jellyseerr"},
+        {"name": "Transmission", "logo": "📥", "description": "BitTorrent client", "repository": "linuxserver/transmission"},
+        {"name": "Sonarr", "logo": "📺", "description": "TV show management", "repository": "linuxserver/sonarr"},
+        {"name": "Radarr", "logo": "🎥", "description": "Movie management", "repository": "linuxserver/radarr"},
+        {"name": "Plex", "logo": "▶️", "description": "Media streaming", "repository": "plexinc/pms-docker"},
+        {"name": "Portainer", "logo": "🐳", "description": "Container management", "repository": "portainer/portainer-ce"}
     ]
     
-    await db.app_templates.insert_many(templates)
-    return {"message": f"Seeded {len(templates)} app templates"}
+    for app_data in apps:
+        existing = db.query(AppTemplate).filter(AppTemplate.name == app_data["name"]).first()
+        if not existing:
+            app = AppTemplate(**app_data)
+            db.add(app)
+    
+    db.commit()
+    return {"message": "Apps seeded successfully"}
 
+# Import advanced routes
+from server_advanced import advanced_router
+api_router.include_router(advanced_router)
+
+# Add routers
 app.include_router(api_router)
 
-# Include advanced features router
-try:
-    from server_advanced import advanced_router
-    app.include_router(advanced_router)
-except ImportError:
-    pass
-
+# CORS
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+@app.get("/")
+def root():
+    return {"message": "Media Basher API", "version": "1.0.0"}
 
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+@app.get("/health")
+def health():
+    return {"status": "healthy"}
