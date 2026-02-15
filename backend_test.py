@@ -142,7 +142,7 @@ class MediaBasherAPITester:
             return self.log_test("CORS Headers", False, f"- Error: {str(e)}")
 
     def test_storage_pool_creation(self):
-        """Test storage pool creation"""
+        """Test storage pool creation with /tmp path"""
         pool_data = {
             "name": "Test Storage Pool",
             "path": "/tmp"
@@ -151,9 +151,46 @@ class MediaBasherAPITester:
         success, status, response = self.make_request('POST', 'storage/pools', pool_data, 200)
         
         if success and 'message' in response:
-            return self.log_test("Storage Pool Creation", True, f"- {response['message']}")
+            return self.log_test("Storage Pool Creation (/tmp)", True, f"- {response['message']}")
         else:
-            return self.log_test("Storage Pool Creation", False, f"- Status: {status}, Response: {response}")
+            return self.log_test("Storage Pool Creation (/tmp)", False, f"- Status: {status}, Response: {response}")
+
+    def test_storage_pool_root_path(self):
+        """Test storage pool creation with root path / as specified in review request"""
+        pool_data = {
+            "name": "Main Storage",
+            "path": "/"
+        }
+        
+        success, status, response = self.make_request('POST', 'storage/pools', pool_data, 200)
+        
+        if success and 'message' in response:
+            return self.log_test("Storage Pool Creation (Root /)", True, f"- {response['message']}")
+        else:
+            # Check if error response is properly formatted (string, not object)
+            error_detail = response.get('detail', 'Unknown error')
+            if isinstance(error_detail, str):
+                return self.log_test("Storage Pool Creation (Root /)", False, f"- Status: {status}, Error: {error_detail} (Proper string format)")
+            else:
+                return self.log_test("Storage Pool Creation (Root /)", False, f"- Status: {status}, Error format issue: {response}")
+
+    def test_storage_pool_invalid_path(self):
+        """Test storage pool creation with invalid path to check error format"""
+        pool_data = {
+            "name": "Invalid Storage",
+            "path": "/nonexistent/path/12345"
+        }
+        
+        success, status, response = self.make_request('POST', 'storage/pools', pool_data, 400)
+        
+        if success and 'detail' in response:
+            error_detail = response['detail']
+            if isinstance(error_detail, str):
+                return self.log_test("Storage Pool Invalid Path Error Format", True, f"- Proper string error: {error_detail}")
+            else:
+                return self.log_test("Storage Pool Invalid Path Error Format", False, f"- Error not string format: {response}")
+        else:
+            return self.log_test("Storage Pool Invalid Path Error Format", False, f"- Status: {status}, Response: {response}")
 
     def test_get_storage_pools(self):
         """Test getting storage pools"""
