@@ -123,9 +123,8 @@ export default function StoragePage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {pools.map((pool) => {
-            const usagePercent = (pool.used_space / pool.total_space) * 100;
             return (
-              <Card key={pool.id} className="rounded-sm border-border" data-testid={`storage-pool-${pool.name}`}>
+              <Card key={pool.name} className="rounded-sm border-border" data-testid={`storage-pool-${pool.name}`}>
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -136,7 +135,7 @@ export default function StoragePage() {
                       <div className="mt-2 space-y-1">
                         <p className="text-sm text-muted-foreground font-mono">{pool.path}</p>
                         <Badge variant="outline" className="rounded-sm text-xs font-mono uppercase mt-2">
-                          {pool.pool_type}
+                          local
                         </Badge>
                       </div>
                     </div>
@@ -154,13 +153,8 @@ export default function StoragePage() {
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">Used</span>
-                      <span className="text-sm font-mono font-bold">{usagePercent.toFixed(1)}%</span>
-                    </div>
-                    <Progress value={usagePercent} className="h-2" />
-                    <div className="flex justify-between text-xs font-mono text-muted-foreground">
-                      <span>{formatBytes(pool.used_space)}</span>
-                      <span>{formatBytes(pool.total_space)}</span>
+                      <span className="text-sm text-muted-foreground">Size</span>
+                      <span className="text-sm font-mono font-bold">{pool.size}</span>
                     </div>
                   </div>
                 </CardContent>
