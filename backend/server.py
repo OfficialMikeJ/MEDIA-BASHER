@@ -162,6 +162,17 @@ def login(credentials: UserLogin, db: Session = Depends(get_db)):
         "first_login": user.first_login
     }
 
+@api_router.get("/auth/me")
+def get_me(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == username).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {
+        "username": user.username,
+        "email": user.email,
+        "first_login": user.first_login
+    }
+
 @api_router.get("/system/metrics")
 def get_system_metrics(username: str = Depends(get_current_user)):
     cpu_percent = psutil.cpu_percent(interval=1)
@@ -199,6 +210,22 @@ def get_system_metrics(username: str = Depends(get_current_user)):
 
 @api_router.get("/containers")
 def get_containers(username: str = Depends(get_current_user)):
+    if not docker_client:
+        return []
+    
+    try:
+        containers = docker_client.containers.list(all=True)
+        return [{
+            "id": c.id[:12],
+            "name": c.name,
+            "status": c.status,
+            "image": c.image.tags[0] if c.image.tags else "unknown"
+        } for c in containers]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/containers/list")
+def get_containers_list(username: str = Depends(get_current_user)):
     if not docker_client:
         return []
     
