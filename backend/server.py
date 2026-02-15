@@ -271,6 +271,16 @@ def get_storage_pools(username: str = Depends(get_current_user), db: Session = D
         "size": p.size
     } for p in pools]
 
+@api_router.get("/applications")
+def get_applications(username: str = Depends(get_current_user), db: Session = Depends(get_db)):
+    apps = db.query(AppTemplate).all()
+    return [{
+        "name": app.name,
+        "logo": app.logo,
+        "description": app.description,
+        "repository": app.repository
+    } for app in apps]
+
 @api_router.post("/seed-apps")
 def seed_apps(db: Session = Depends(get_db)):
     apps = [
