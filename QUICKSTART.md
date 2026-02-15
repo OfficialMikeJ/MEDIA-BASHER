@@ -71,7 +71,7 @@ After installation:
 
 ## Support
 
-- Repository: https://github.com/OfficialMikeJ/media-basher
+- Repository: https://github.com/OfficialMikeJ/MEDIA-BASHER
 - Issues: Create an issue on GitHub
 - No official support provided (community-driven)
 
