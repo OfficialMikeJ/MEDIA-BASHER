@@ -150,20 +150,40 @@ echo "[8/8] Setting up Media Basher..."
 
 # Create installation directory
 mkdir -p ${INSTALL_DIR}
-cd ${INSTALL_DIR}
 
 # Clone the repository
 echo "  Cloning Media Basher from GitHub..."
 if [ -d "${INSTALL_DIR}/.git" ]; then
     echo "  Repository already exists, pulling latest changes..."
+    cd ${INSTALL_DIR}
     git pull origin main
 else
-    git clone https://github.com/OfficialMikeJ/MEDIA-BASHER.git ${INSTALL_DIR}
+    # Clone into a temp directory first
+    TEMP_DIR=$(mktemp -d)
+    git clone https://github.com/OfficialMikeJ/MEDIA-BASHER.git ${TEMP_DIR}
     if [ $? -ne 0 ]; then
         echo "  ERROR: Failed to clone repository"
-        echo "  Please ensure the repository is public and accessible"
+        echo "  Please ensure the repository is public and contains all files"
         exit 1
     fi
+    
+    # Move contents to installation directory
+    mv ${TEMP_DIR}/* ${INSTALL_DIR}/ 2>/dev/null
+    mv ${TEMP_DIR}/.* ${INSTALL_DIR}/ 2>/dev/null
+    rm -rf ${TEMP_DIR}
+    cd ${INSTALL_DIR}
+fi
+
+# Verify required directories exist
+if [ ! -d "${INSTALL_DIR}/backend" ] || [ ! -d "${INSTALL_DIR}/frontend" ]; then
+    echo "  ERROR: backend/ or frontend/ directories not found in repository"
+    echo "  Please ensure you've pushed the complete codebase to GitHub"
+    echo ""
+    echo "  Your repository should contain:"
+    echo "    - backend/ (with server.py and other Python files)"
+    echo "    - frontend/ (with package.json and React files)"
+    echo ""
+    exit 1
 fi
 
 echo "  Repository cloned successfully"
