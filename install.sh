@@ -174,16 +174,16 @@ rm -rf ${TEMP_DIR}
 echo "  Files copied to ${INSTALL_DIR}/media-basher"
 
 # Verify directory structure
-if [ ! -d "${INSTALL_DIR}/backend" ] || [ ! -d "${INSTALL_DIR}/frontend" ]; then
+if [ ! -d "${INSTALL_DIR}/media-basher/backend" ] || [ ! -d "${INSTALL_DIR}/media-basher/frontend" ]; then
     echo "  ERROR: Repository structure is incorrect"
     echo "  Expected backend/ and frontend/ directories"
-    ls -la ${INSTALL_DIR}
+    ls -la ${INSTALL_DIR}/media-basher
     exit 1
 fi
 
 # Setup backend
 echo "  Setting up backend..."
-cd ${INSTALL_DIR}/backend
+cd ${INSTALL_DIR}/media-basher/backend
 python3.11 -m venv venv
 source venv/bin/activate
 pip install --upgrade pip -qq
