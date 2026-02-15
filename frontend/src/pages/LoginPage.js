@@ -29,8 +29,12 @@ export default function LoginPage() {
       const endpoint = isLogin ? '/auth/login' : '/auth/register';
       const response = await api.post(endpoint, formData);
 
-      localStorage.setItem('token', response.data.access_token);
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      localStorage.setItem('token', response.data.token);
+      const user = {
+        username: response.data.username || formData.username,
+        first_login: response.data.first_login || false
+      };
+      localStorage.setItem('user', JSON.stringify(user));
 
       toast.success(isLogin ? 'Login successful!' : 'Account created!');
       navigate('/');
