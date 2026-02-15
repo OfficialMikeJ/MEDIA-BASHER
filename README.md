@@ -35,7 +35,7 @@ A powerful server management dashboard for managing Docker containers, media ser
 ### Quick Install
 
 ```bash
-wget https://raw.githubusercontent.com/OfficialMikeJ/media-basher/main/install.sh
+wget https://raw.githubusercontent.com/OfficialMikeJ/MEDIA-BASHER/main/install.sh
 sudo bash install.sh
 ```
 
