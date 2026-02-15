@@ -90,7 +90,7 @@ class MediaBasherAPITester:
     def test_invalid_login(self):
         """Test login with invalid credentials - should return 401"""
         login_data = {
-            "username": "admin",
+            "username": "mike",
             "password": "wrongpassword"
         }
         
