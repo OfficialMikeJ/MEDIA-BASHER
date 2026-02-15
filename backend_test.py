@@ -206,9 +206,46 @@ class MediaBasherAPITester:
         success, status, response = self.make_request('GET', 'containers/list', expected_status=200)
         
         if success and isinstance(response, list):
-            return self.log_test("List Containers", True, f"- Found {len(response)} containers")
+            return self.log_test("List Containers (/containers/list)", True, f"- Found {len(response)} containers")
         else:
-            return self.log_test("List Containers", False, f"- Status: {status}, Response: {response}")
+            return self.log_test("List Containers (/containers/list)", False, f"- Status: {status}, Response: {response}")
+
+    def test_containers_endpoint(self):
+        """Test containers endpoint (alternative endpoint)"""
+        success, status, response = self.make_request('GET', 'containers', expected_status=200)
+        
+        if success and isinstance(response, list):
+            return self.log_test("List Containers (/containers)", True, f"- Found {len(response)} containers")
+        else:
+            return self.log_test("List Containers (/containers)", False, f"- Status: {status}, Response: {response}")
+
+    def test_applications_before_seed(self):
+        """Test applications endpoint before seeding"""
+        success, status, response = self.make_request('GET', 'applications', expected_status=200)
+        
+        if success and isinstance(response, list):
+            return self.log_test("Applications Before Seed", True, f"- Found {len(response)} applications")
+        else:
+            return self.log_test("Applications Before Seed", False, f"- Status: {status}, Response: {response}")
+
+    def test_seed_applications(self):
+        """Test seeding applications as specified in review request"""
+        success, status, response = self.make_request('POST', 'seed-apps', expected_status=200)
+        
+        if success and 'message' in response:
+            return self.log_test("Seed Applications", True, f"- {response['message']}")
+        else:
+            return self.log_test("Seed Applications", False, f"- Status: {status}, Response: {response}")
+
+    def test_applications_after_seed(self):
+        """Test applications endpoint after seeding"""
+        success, status, response = self.make_request('GET', 'applications', expected_status=200)
+        
+        if success and isinstance(response, list) and len(response) > 0:
+            app_names = [app.get('name', 'Unknown') for app in response]
+            return self.log_test("Applications After Seed", True, f"- Found {len(response)} applications: {', '.join(app_names[:3])}...")
+        else:
+            return self.log_test("Applications After Seed", False, f"- Status: {status}, Response: {response}")
 
     def create_test_user(self):
         """Create mike user for testing if it doesn't exist"""
