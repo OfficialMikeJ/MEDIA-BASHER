@@ -72,7 +72,7 @@ export default function ApplicationsPage() {
 
   const addCustomApp = async () => {
     try {
-      await api.post('/apps/templates', {
+      await api.post('/applications', {
         ...customApp,
         official: false,
       });
