@@ -299,13 +299,14 @@ api_router.include_router(advanced_router)
 # Add routers
 app.include_router(api_router)
 
-# CORS
+# CORS - Must be added AFTER routers
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 @app.get("/")
