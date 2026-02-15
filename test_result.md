@@ -243,6 +243,66 @@ frontend:
           agent: "testing"
           comment: "ISSUE IDENTIFIED AND FIXED: Frontend was trying to access wrong field names in API response. Backend returns 'token' but frontend was looking for 'access_token'. Backend returns user data in separate fields but frontend expected 'user' object. Fixed LoginPage.js lines 32-36 to correctly access response.data.token and construct user object from response.data.username and response.data.first_login. Both login and registration now work correctly - users are successfully redirected to dashboard with proper token storage."
 
+  - task: "Applications Page API Integration"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/ApplicationsPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "ISSUE IDENTIFIED: Frontend was using wrong API endpoints - calling /apps/templates instead of /applications, /seed-apps instead of /applications/seed, etc. This caused 'Failed to load applications' errors."
+        - working: true
+          agent: "testing"
+          comment: "FIXED: Updated all API endpoints in ApplicationsPage.js to match backend: /apps/templates -> /applications, /seed-apps -> /applications/seed, /apps/install -> /applications/install, /apps/templates -> /applications for custom apps. Applications page now loads correctly and shows 'Official Apps (0)' and 'Third-Party (7)' tabs, indicating proper API communication."
+
+  - task: "Storage Page API Integration"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/StoragePage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "ISSUE IDENTIFIED: Frontend was sending 'mount_point' field but backend expected 'path' field. Also frontend expected progress bar data (used_space, total_space) but backend only returned simple size string."
+        - working: true
+          agent: "testing"
+          comment: "FIXED: Updated StoragePage.js to use 'path' field instead of 'mount_point', updated form validation and display logic. Simplified storage pool display to show size as string instead of progress bars to match backend response format. Storage pools now add successfully without React errors."
+
+  - task: "Monitoring Page API Integration"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/MonitoringPage.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "ISSUE IDENTIFIED: Frontend was calling non-existent /advanced/metrics/history and /advanced/metrics/aggregated endpoints instead of /system/metrics. Also expected different response format."
+        - working: true
+          agent: "testing"
+          comment: "FIXED: Updated MonitoringPage.js to use /system/metrics endpoint and correctly parse response format {cpu, memory: {percent}, disk: {percent}}. Monitoring page now displays real-time metrics with charts showing CPU (14.4%), RAM (70.7%), and Disk (18.0%) usage with proper historical data visualization."
+
+  - task: "Welcome Dialog Integration"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/components/layout/FirstTimeModal.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: false
+          agent: "testing"
+          comment: "ISSUE IDENTIFIED: Welcome dialog kept reappearing because /api/auth/mark-onboarded endpoint was missing from backend, causing 404 errors."
+        - working: true
+          agent: "testing"
+          comment: "FIXED: Added missing /api/auth/mark-onboarded endpoint to backend server.py. Welcome dialog now properly closes and doesn't reappear after user clicks 'CONTINUE TO DASHBOARD'."
+
 metadata:
   created_by: "testing_agent"
   version: "1.0"
