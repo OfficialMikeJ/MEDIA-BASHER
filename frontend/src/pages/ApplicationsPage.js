@@ -37,7 +37,7 @@ export default function ApplicationsPage() {
 
   const loadApps = async () => {
     try {
-      const response = await api.get('/apps/templates');
+      const response = await api.get('/applications');
       setApps(response.data);
     } catch (error) {
       console.error('Error loading apps:', error);
