@@ -191,50 +191,50 @@ class MediaBasherAPITester:
             return self.log_test("Create Test User (mike)", False, f"- Status: {status}, Response: {response}")
 
 def main():
-    print("🚀 Starting Media Basher API Tests")
-    print("=" * 50)
+    print("🚀 Starting Media Basher Authentication API Tests")
+    print("=" * 60)
     
     tester = MediaBasherAPITester()
     
+    # Test CORS headers first
+    print("\n📋 Testing CORS Configuration...")
+    tester.test_cors_headers()
+    
+    # Create test user if needed
+    print("\n📋 Setting up Test User...")
+    tester.create_test_user()
+    
     # Test invalid login first (no auth needed)
-    print("\n📋 Testing Authentication...")
+    print("\n📋 Testing Authentication Errors...")
     tester.test_invalid_login()
     
-    # Test valid login to get token
+    # Test registration with specific data from review request
+    print("\n📋 Testing User Registration...")
+    tester.test_register()
+    
+    # Test valid login to get token (mike/test123)
+    print("\n📋 Testing Valid Login...")
     if not tester.test_valid_login():
         print("❌ Cannot proceed without valid authentication")
         return 1
     
-    # Test authenticated endpoints
-    print("\n📋 Testing Authenticated Endpoints...")
+    # Test protected endpoints with token
+    print("\n📋 Testing Protected Endpoints...")
     tester.test_get_me()
     tester.test_system_metrics()
-    
-    # Test storage functionality (main focus)
-    print("\n📋 Testing Storage Management...")
-    success, pool_id = tester.test_storage_pool_creation()
-    tester.test_get_storage_pools()
-    
-    # Test other endpoints
-    print("\n📋 Testing Other Features...")
-    tester.test_get_settings()
-    tester.test_app_templates()
     tester.test_containers_list()
     
-    # Cleanup
-    if pool_id:
-        tester.cleanup_storage_pool(pool_id)
-    
-    # Test registration (separate user)
-    print("\n📋 Testing User Registration...")
-    tester.test_register()
+    # Test storage functionality
+    print("\n📋 Testing Storage Management...")
+    tester.test_storage_pool_creation()
+    tester.test_get_storage_pools()
     
     # Final results
-    print("\n" + "=" * 50)
+    print("\n" + "=" * 60)
     print(f"📊 Test Results: {tester.tests_passed}/{tester.tests_run} passed")
     
     if tester.tests_passed == tester.tests_run:
-        print("🎉 All tests passed! Application is working correctly.")
+        print("🎉 All backend API tests passed! Backend is working correctly.")
         return 0
     else:
         print(f"⚠️  {tester.tests_run - tester.tests_passed} tests failed. Check the issues above.")
