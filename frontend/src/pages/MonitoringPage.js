@@ -55,7 +55,7 @@ export default function MonitoringPage() {
 
   const startCollection = async () => {
     try {
-      await api.post('/advanced/metrics/start-collection');
+      // Since we're using real-time metrics, just start the collection interval
       toast.success('Metrics collection started');
       setTimeout(loadMetrics, 2000);
     } catch (error) {
