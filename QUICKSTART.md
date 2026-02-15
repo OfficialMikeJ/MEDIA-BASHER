@@ -17,7 +17,7 @@ sudo /app/install.sh
 Once you push to GitHub, users will be able to install with:
 
 ```bash
-wget https://raw.githubusercontent.com/OfficialMikeJ/media-basher/main/install.sh
+wget https://raw.githubusercontent.com/OfficialMikeJ/MEDIA-BASHER/main/install.sh
 sudo bash install.sh
 ```
 
