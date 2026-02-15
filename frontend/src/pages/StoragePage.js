@@ -217,7 +217,7 @@ export default function StoragePage() {
             <Button
               onClick={addPool}
               data-testid="save-storage-button"
-              disabled={!newPool.name || !newPool.mount_point}
+              disabled={!newPool.name || !newPool.path}
               className="rounded-sm uppercase tracking-wide font-medium"
             >
               Add Storage Pool
