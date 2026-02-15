@@ -60,9 +60,11 @@ fi
 
 # Check disk space
 DISK_SPACE_GB=$(df -BG / | tail -1 | awk '{print $4}' | sed 's/G//')
-echo "  Available Disk Space: ${DISK_SPACE_GB}GB"
+echo "  Available Disk Space on /: ${DISK_SPACE_GB}GB"
 if [ "$DISK_SPACE_GB" -lt 120 ]; then
-    echo "  Warning: Minimum 120GB storage recommended"
+    echo "  Warning: Root partition has less than 120GB available"
+    echo "  Note: You can add additional storage pools after installation"
+    echo "  Media Basher supports multiple storage locations"
 fi
 
 echo ""
