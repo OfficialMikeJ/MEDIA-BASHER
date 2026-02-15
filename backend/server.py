@@ -293,8 +293,8 @@ def seed_apps(db: Session = Depends(get_db)):
     return {"message": "Apps seeded successfully"}
 
 # Import advanced routes
-from server_advanced import advanced_router
-api_router.include_router(advanced_router)
+# from server_advanced import advanced_router
+# api_router.include_router(advanced_router)
 
 # Add routers
 app.include_router(api_router)
